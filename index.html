@@ -129,7 +129,7 @@
                         </div>
                         <div>
                             <h3 class="text-lg font-bold text-slate-900">탕감 히스토리 내역</h3>
-                            <p class="text-[11px] text-indigo-600 font-medium">💡 분류 태그와 상세 메모를 각각 [더블클릭]하면 현장에서 바로 수정이 가능합니다!</p>
+                            <p class="text-[11px] text-indigo-600 font-medium">💡 분류 태그와 상세 메모를 각각 [더블클릭]하면 수정이 가능하며, 우측 [삭제] 버튼으로 취소가 가능합니다.</p>
                         </div>
                     </div>
                     <div class="flex gap-2">
@@ -164,10 +164,6 @@
     </div>
 
     <script>
-        // =========================================================================
-        // ⚠️ [필수] 아들과 실시간 주소를 공유하려면 아래의 YOUR_... 빈칸들을 
-        // 본인의 실제 Firebase 정보들로 붙여넣어 교체해 주셔야 합니다!
-        // =========================================================================
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_AUTH_DOMAIN",
@@ -268,6 +264,22 @@
             });
         }
 
+        // ⭐ 신규 추가: 중간 내역이 삭제되었을 때, 남은 기록들을 기준으로 부채 연도별/순서별 잔액 트래킹 라인을 완벽하게 전수 재계산해 주는 안전 장치 함수
+        function recalculateBalances() {
+            if (!Array.isArray(history)) history = [];
+            // 과거 등록 순(id 오름차순)으로 임시 역정렬하여 처음부터 순서대로 차감 계산
+            let tempHistory = [...history].sort((a, b) => (a.id || 0) - (b.id || 0));
+            let currentTempBalance = INITIAL_DEBT;
+            
+            tempHistory.forEach(item => {
+                currentTempBalance -= (item.amount || 0);
+                item.balance = currentTempBalance; // 각 노드의 잔액 라인 재조정
+            });
+            
+            balance = currentTempBalance; // 최종 잔액 업데이트
+            sortHistoryData(); // 다시 원래의 최신순 배열로 원복
+        }
+
         function updateUI() {
             const totalCleared = INITIAL_DEBT - balance;
             const progressPercent = INITIAL_DEBT > 0 ? ((totalCleared / INITIAL_DEBT) * 100).toFixed(1) : 100;
@@ -313,6 +325,7 @@
                     </div>
                 ` : "";
 
+                // ⭐ UI 수정: 금액 정보 우측에 컴팩트하고 깔끔한 [삭제] 빨간색 버튼 추가 배치
                 return `
                     <div class="bg-white border border-slate-100 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center transition hover:shadow-md hover:border-slate-200/60 duration-200 gap-4">
                         <div class="space-y-1 w-full md:w-3/4">
@@ -329,16 +342,44 @@
                             </p>
                             ${imgElement}
                         </div>
-                        <div class="text-right w-full md:w-1/4 flex justify-between md:justify-end items-center md:items-end md:flex-col">
+                        <div class="text-right w-full md:w-1/4 flex justify-between md:justify-end items-center md:items-end md:flex-row md:flex-col gap-3 md:gap-1">
                             <span class="md:hidden text-xs text-slate-400">탕감액/잔액</span>
-                            <div>
-                                <p class="text-base font-extrabold text-red-500">- ${(log.amount || 0).toLocaleString()}원</p>
-                                <p class="text-[11px] font-medium text-slate-400">잔액: ${(log.balance || 0).toLocaleString()}원</p>
+                            <div class="flex items-center md:items-end gap-3 md:flex-col">
+                                <div class="text-right">
+                                    <p class="text-base font-extrabold text-red-500">- ${(log.amount || 0).toLocaleString()}원</p>
+                                    <p class="text-[11px] font-medium text-slate-400">잔액: ${(log.balance || 0).toLocaleString()}원</p>
+                                </div>
+                                <button onclick="deleteLogDirect(${log.id})" class="text-xs bg-red-50 hover:bg-red-100 text-red-500 rounded-lg px-2 py-1 transition font-bold cursor-pointer" title="이 내역 취소 및 금액 원복">삭제</button>
                             </div>
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        // ⭐ 신규 기능: 특정 내역을 선택 삭제하고 부채 잔액을 정방향 복구하는 함수 기믹
+        function deleteLogDirect(id) {
+            if (!Array.isArray(history)) return;
+            const itemIndex = history.findIndex(log => log.id === id);
+            if (itemIndex === -1) return;
+
+            const targetItem = history[itemIndex];
+            const msg = `⚠️ 선택하신 탕감 내역을 전면 취소(삭제)하시겠습니까?\n\n` +
+                        `• 날짜: ${targetItem.date}\n` +
+                        `• 항목: [${targetItem.category}] ${targetItem.description || ''}\n` +
+                        `• 금액: ${targetItem.amount.toLocaleString()}원\n\n` +
+                        `※ 취소 즉시 해당 금액이 전체 남은 부채 잔액에 다시 합산되어 원복됩니다.`;
+
+            if (confirm(msg)) {
+                // 배열에서 해당 요소 도려내기
+                history.splice(itemIndex, 1);
+                
+                // 삭제 후 뒤틀릴 수 있는 역대 잔액 데이터 라인 전수 정방향 재계산
+                recalculateBalances();
+                
+                // 데이터 스토리지 마이그레이션 및 동기화 호출
+                syncData();
+            }
         }
 
         function addCustomCategoryDirectly() {
@@ -393,6 +434,7 @@
                     history: history
                 });
             } else {
+                localStorage.setItem('premium_debt_balance', balance);
                 localStorage.setItem('premium_debt_history', JSON.stringify(history));
                 updateUI();
             }
@@ -451,23 +493,24 @@
             if (!Array.isArray(history)) history = [];
             const updatedHistory = [record, ...history];
             history = updatedHistory;
-            sortHistoryData();
+            
+            // 등록 후 전체 정렬 및 밸런스 라인 전수 정렬 재검증
+            recalculateBalances();
 
             if (isFirebaseActive) {
                 database.ref('debt_project').set({
-                    balance: newBalance,
+                    balance: balance,
                     history: history
                 }).then(() => {
                     clearInputs(amountInput, descriptionInput);
-                    checkCompletion(newBalance);
+                    checkCompletion(balance);
                 });
             } else {
-                balance = newBalance;
                 localStorage.setItem('premium_debt_balance', balance);
                 localStorage.setItem('premium_debt_history', JSON.stringify(history));
                 clearInputs(amountInput, descriptionInput);
                 updateUI();
-                checkCompletion(newBalance);
+                checkCompletion(balance);
             }
         }
 
@@ -503,18 +546,19 @@
             }
         }
 
-        // 🌟 [안전 패치 완료] 줄바꿈 기호(\n)를 문자열 합치기 방식으로 안전하게 빌드하여 자바스크립트 폭발 오류를 제거했습니다.
         function exportToCSV() {
             if (!Array.isArray(history) || history.length === 0) {
                 alert('내보낼 데이터가 없습니다.');
                 return;
             }
-            let csvContent = "\uFEFF"; 
-            csvContent += "날짜,분류,탕감금액,남은잔액,상세내용\n";
+            let csvContent = "﻿"; 
+            csvContent += "날짜,분류,탕감금액,남은잔액,상세내용
+";
 
             history.forEach(log => {
                 if (log) {
-                    csvContent += '"' + (log.date || '') + '","' + (log.category || '') + '",' + (log.amount || 0) + ',' + (log.balance || 0) + ',"' + (log.description || '') + '"\n';
+                    csvContent += '"' + (log.date || '') + '","' + (log.category || '') + '",' + (log.amount || 0) + ',' + (log.balance || 0) + ',"' + (log.description || '') + '"
+';
                 }
             });
 
