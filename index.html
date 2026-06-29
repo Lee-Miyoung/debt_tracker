@@ -8,7 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght=300;400;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
         body {
             font-family: 'Noto Sans KR', sans-serif;
             background-color: #f8fafc;
@@ -93,7 +93,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 mb-1">항목 분류</label>
-                        <select id="category" onchange="toggleButtonText(this.value)" ondblclick="addCustomCategoryDirectly()" title="더블클릭하여 맞춤 항목 직접 입력" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium">
+                        <select id="category" onchange="toggleButtonText(this.value)" ondblclick="addCustomCategoryDirectly()" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium">
                             <option value="알바">알바비 정산</option>
                             <option value="용돈 차감">이번 달 용돈 차감</option>
                             <option value="특별 탕감">특별 상환 / 격려 상환</option>
@@ -270,6 +270,7 @@
             }
         }
 
+        // ⭐ 핵심 버그 해결: Firebase에서 불러올 때 발생하는 null(유령 데이터) 완벽 차단 필터 적용
         if (isFirebaseActive) {
             database.ref('debt_project').on('value', (snapshot) => {
                 const data = snapshot.val();
@@ -277,7 +278,8 @@
                     initialDebt = data.initialDebt !== undefined ? data.initialDebt : 50000000;
                     startDate = data.startDate || "2026-05-01";
                     const rawHistory = data.history || [];
-                    history = Array.isArray(rawHistory) ? rawHistory : Object.values(rawHistory);
+                    let tempArr = Array.isArray(rawHistory) ? rawHistory : Object.values(rawHistory);
+                    history = tempArr.filter(item => item !== null && item !== undefined && item.id);
                 } else {
                     initialDebt = 50000000;
                     startDate = "2026-05-01";
@@ -293,7 +295,8 @@
             startDate = localStorage.getItem('premium_debt_start_date') || "2026-05-01";
             const rawLocalStorage = localStorage.getItem('premium_debt_history');
             let parsedHistory = rawLocalStorage ? JSON.parse(rawLocalStorage) : [];
-            history = Array.isArray(parsedHistory) ? parsedHistory : Object.values(parsedHistory);
+            let tempArr = Array.isArray(parsedHistory) ? parsedHistory : Object.values(parsedHistory);
+            history = tempArr.filter(item => item !== null && item !== undefined && item.id);
             document.getElementById('startDateInput').value = startDate;
             recalculateBalances();
             setTimeout(updateUI, 100);
@@ -320,15 +323,18 @@
 
         function sortHistoryData() {
             if (!Array.isArray(history)) history = [];
-            history.sort((a, b) => {
-                if (!a.date || !b.date) return 0;
+            let safeHistory = history.filter(item => item && item.date);
+            safeHistory.sort((a, b) => {
                 return b.date.localeCompare(a.date) || (b.id || 0) - (a.id || 0);
             });
+            history = safeHistory;
         }
 
         function recalculateBalances() {
             if (!Array.isArray(history)) history = [];
-            let chronologicalHistory = [...history].sort((a, b) => a.date.localeCompare(b.date) || (a.id || 0) - (b.id || 0));
+            // 연산 전 유령 데이터 한 번 더 필터링 (자가 복구 기능)
+            let safeHistory = history.filter(item => item && item.date);
+            let chronologicalHistory = [...safeHistory].sort((a, b) => a.date.localeCompare(b.date) || (a.id || 0) - (b.id || 0));
             
             let currentPrincipal = initialDebt;
             let currentInterestPool = 0;
@@ -423,6 +429,7 @@
             }
 
             historyList.innerHTML = filteredHistory.map((log) => {
+                if(!log) return '';
                 let badgeStyle = "bg-slate-100 text-slate-700 border-slate-200";
                 let amtSignColor = "text-slate-700 font-extrabold";
                 let prefixSign = "";
@@ -439,9 +446,248 @@
                     badgeStyle = "bg-emerald-950 text-emerald-400 border-emerald-800";
                     amtSignColor = "text-emerald-500 font-black";
                     prefixSign = "+ ";
-                    subDetailsLine = `<p class="text-[11px] text-slate-400 font-medium">원금 증액 후 원금 잔고: ${log.remainingPrincipal.toLocaleString()}원</p>`;
+                    subDetailsLine = `<p class="text-[11px] text-slate-400 font-medium">원금 증액 후 원금 잔고: ${(log.remainingPrincipal || 0).toLocaleString()}원</p>`;
                 } else {
                     amtSignColor = "text-red-500 font-extrabold";
                     prefixSign = "- ";
                     subDetailsLine = `
                         <div class="text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-100 p-1.5 rounded mt-1 space-y-0.5 w-fit">
+                            <p class="text-indigo-600">📉 원금 차감분: -${(log.paidPrincipal || 0).toLocaleString()}원 (남은 원금: ${(log.remainingPrincipal || 0).toLocaleString()}원)</p>
+                            <p class="text-amber-600">🔸 누적이자 차감분: -${(log.paidInterest || 0).toLocaleString()}원 (남은 이자: ${(log.remainingInterest || 0).toLocaleString()}원)</p>
+                        </div>
+                    `;
+                }
+
+                const imgElement = log.image ? `
+                    <div class="mt-2 text-left">
+                        <img src="${log.image}" alt="현장사진" class="max-w-[140px] h-auto rounded-lg shadow-xs border border-slate-200 hover:scale-105 transition-all duration-200 cursor-pointer" onclick="window.open(this.src)">
+                    </div>
+                ` : "";
+
+                return `
+                    <div class="bg-white border border-slate-100 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center transition hover:shadow-md hover:border-slate-200/60 duration-200 gap-4">
+                        <div class="space-y-1 w-full md:w-3/4">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold border px-2 py-0.5 rounded-md ${badgeStyle} cursor-pointer select-none"
+                                      ondblclick="editCategoryDirect(${log.id})" title="더블클릭하여 분류 태그 직접 수정">
+                                    ${log.category}
+                                </span>
+                                <span class="text-[11px] text-slate-400 font-medium">${log.date}</span>
+                            </div>
+                            <p class="text-sm font-semibold text-slate-700 mt-1 cursor-edit hover:bg-slate-50 p-1 rounded transition border border-transparent hover:border-dashed hover:border-slate-300 select-none" 
+                               ondblclick="editDescriptionDirect(${log.id})" title="더블클릭하여 메모 바로 수정">
+                                ${log.description || '상세 내역 없음 (더블클릭하여 입력)'}
+                            </p>
+                            ${subDetailsLine}
+                            ${imgElement}
+                        </div>
+                        <div class="text-right w-full md:w-1/4 flex justify-between md:justify-end items-center md:items-end md:flex-row md:flex-col gap-3 md:gap-1">
+                            <span class="md:hidden text-xs text-slate-400">정산액</span>
+                            <div class="flex items-center md:items-end gap-3 md:flex-col">
+                                <div class="text-right">
+                                    <p class="text-base ${amtSignColor}">${prefixSign}${(log.amount || 0).toLocaleString()}원</p>
+                                </div>
+                                <button onclick="deleteLogDirect(${log.id})" class="text-xs bg-red-50 hover:bg-red-100 text-red-500 rounded-lg px-2 py-1 transition font-bold cursor-pointer" title="이 내역 취소">삭제</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function deleteLogDirect(id) {
+            if (!Array.isArray(history)) return;
+            const itemIndex = history.findIndex(log => log.id === id);
+            if (itemIndex === -1) return;
+
+            const targetItem = history[itemIndex];
+            const msg = `⚠️ 선택하신 내역을 취소(삭제)하시겠습니까?\n\n` +
+                        `• 날짜: ${targetItem.date}\n` +
+                        `• 항목: [${targetItem.category}] ${targetItem.description || ''}\n` +
+                        `• 금액: ${targetItem.amount.toLocaleString()}원\n\n` +
+                        `※ 취소 즉시 정산 타임라인과 이자 균형이 과거 시점으로 역추적 복구 계산됩니다.`;
+
+            if (confirm(msg)) {
+                history.splice(itemIndex, 1);
+                recalculateBalances();
+                syncData();
+            }
+        }
+
+        function addCustomCategoryDirectly() {
+            const customCat = prompt("📋 목록에 없는 새로운 항목 분류를 직접 입력하세요:");
+            if (!customCat || !customCat.trim()) return;
+            
+            const select = document.getElementById('category');
+            const trimmed = customCat.trim();
+            
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === trimmed) {
+                    select.selectedIndex = i;
+                    return;
+                }
+            }
+            
+            const newOption = document.createElement('option');
+            newOption.value = trimmed;
+            newOption.text = trimmed;
+            select.add(newOption, select.options[select.options.length - 2]); 
+            select.value = trimmed;
+        }
+
+        function editCategoryDirect(id) {
+            if (!Array.isArray(history)) return;
+            const item = history.find(log => log.id === id);
+            if (!item) return;
+
+            const updatedCat = prompt("✏️ 분류명을 직접 입력하여 수정하세요:", item.category);
+            if (updatedCat === null || !updatedCat.trim()) return;
+
+            item.category = updatedCat.trim();
+            recalculateBalances();
+            syncData();
+        }
+
+        function editDescriptionDirect(id) {
+            if (!Array.isArray(history)) return;
+            const item = history.find(log => log.id === id);
+            if (!item) return;
+
+            const updatedText = prompt("✏️ 상세 메모를 직접 입력하여 수정하세요:", item.description || "");
+            if (updatedText === null) return;
+
+            item.description = updatedText.trim();
+            syncData();
+        }
+
+        function syncData() {
+            if (isFirebaseActive) {
+                database.ref('debt_project').set({
+                    balance: balance,
+                    history: history,
+                    startDate: startDate,
+                    initialDebt: initialDebt
+                });
+            } else {
+                localStorage.setItem('premium_debt_balance', balance);
+                localStorage.setItem('premium_debt_history', JSON.stringify(history));
+                localStorage.setItem('premium_debt_start_date', startDate);
+                localStorage.setItem('premium_debt_initial_amt', initialDebt);
+                updateUI();
+            }
+        }
+
+        function filterHistory(category) {
+            currentFilter = category;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = "filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap";
+            });
+            
+            let targetId = `filter-${category}`;
+            if (category === '부채 추가 (증액)') targetId = 'filter-부채추가';
+            const targetBtn = document.getElementById(targetId);
+            if (targetBtn) {
+                targetBtn.className = "filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 text-white transition cursor-pointer whitespace-nowrap";
+            }
+            renderHistoryList();
+        }
+
+        function addDeduction() {
+            const category = document.getElementById('category').value;
+            const amountInput = document.getElementById('amount');
+            const descriptionInput = document.getElementById('description');
+            const dateInput = document.getElementById('dateInput');
+            
+            const amount = parseInt(amountInput.value);
+            const description = descriptionInput.value.trim();
+            const selectedDate = dateInput.value;
+
+            if (!selectedDate) {
+                alert('날짜를 선택해주세요.');
+                return;
+            }
+
+            if (isNaN(amount) || amount <= 0) {
+                alert('정확한 금액을 숫자로 입력해주세요.');
+                return;
+            }
+
+            const record = {
+                id: Date.now(),
+                date: selectedDate,
+                category: category,
+                amount: amount,
+                balance: 0, 
+                description: description,
+                image: compressedImageBase64
+            };
+
+            if (!Array.isArray(history)) history = [];
+            history.push(record);
+            
+            recalculateBalances();
+            syncData();
+
+            clearInputs(amountInput, descriptionInput);
+        }
+
+        function clearInputs(amt, desc) {
+            amt.value = '';
+            desc.value = '';
+            document.getElementById('imageInput').value = '';
+            compressedImageBase64 = "";
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('dateInput').value = todayStr;
+            document.getElementById('category').value = "알바";
+            toggleButtonText("알바");
+        }
+
+        function resetData() {
+            if (confirm('⚠️ 경고: 모든 기록이 초기화되고 설정된 최초 원금으로 리셋됩니다. 진행할까요?')) {
+                if (isFirebaseActive) {
+                    database.ref('debt_project').set({
+                        balance: initialDebt,
+                        history: [],
+                        startDate: "2026-05-01",
+                        initialDebt: initialDebt
+                    });
+                } else {
+                    localStorage.removeItem('premium_debt_balance');
+                    localStorage.removeItem('premium_debt_history');
+                    localStorage.removeItem('premium_debt_start_date');
+                    balance = initialDebt;
+                    history = [];
+                    startDate = "2026-05-01";
+                    recalculateBalances();
+                    updateUI();
+                }
+            }
+        }
+
+        function exportToCSV() {
+            if (!Array.isArray(history) || history.length === 0) {
+                alert('내보낼 데이터가 없습니다.');
+                return;
+            }
+            let csvContent = "\uFEFF"; 
+            csvContent += "날짜,분류,금액,남은원금잔액,남은이자잔액,상세내용\n";
+
+            history.forEach(log => {
+                if (log) {
+                    const prefix = log.category === '부채 추가 (증액)' ? '+' : '-';
+                    csvContent += '"' + (log.date || '') + '","' + (log.category || '') + '","' + prefix + (log.amount || 0) + '",' + (log.remainingPrincipal || 0) + ',' + (log.remainingInterest || 0) + ',"' + (log.description || '') + '"\n';
+                }
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `부채탕감_원리금독립정산판_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
