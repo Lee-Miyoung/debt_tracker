@@ -123,4 +123,325 @@
                 </div>
 
                 <button onclick="addDeduction()" id="submitBtn" class="w-full mt-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md shadow-indigo-600/10 transition duration-200 active:scale-[0.99] cursor-pointer flex justify-center items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span id="submitBtnText">탕감 내역 반영하기</span>
+                </button>
+            </div>
+
+            <div class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="p-2 rounded-xl bg-slate-100 text-slate-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">전체 정산 히스토리 내역</h3>
+                            <p class="text-[11px] text-indigo-600 font-medium">💡 분류 태그와 상세 메모를 각각 [더블클릭]하면 수정이 가능하며, 우측 [삭제] 버튼으로 취소가 가능합니다.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="exportToCSV()" class="text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 rounded-lg px-3 py-1.5 transition cursor-pointer">엑셀 다운로드</button>
+                        <button onclick="resetData()" class="text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 rounded-lg px-3 py-1.5 transition cursor-pointer">전체 리셋</button>
+                    </div>
+                </div>
+
+                <div class="flex gap-1.5 border-b border-slate-100 pb-3 mb-3 overflow-x-auto">
+                    <button onclick="filterHistory('전체')" id="filter-전체" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 text-white transition cursor-pointer whitespace-nowrap">전체</button>
+                    <button onclick="filterHistory('알바')" id="filter-알바" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">알바</button>
+                    <button onclick="filterHistory('용돈 차감')" id="filter-용돈" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">용돈 차감</button>
+                    <button onclick="filterHistory('특별 탕감')" id="filter-특별" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">특별 탕감</button>
+                    <button onclick="filterHistory('현장사진')" id="filter-현장사진" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">현장사진</button>
+                    <button onclick="filterHistory('배송')" id="filter-배송" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">배송</button>
+                    <button onclick="filterHistory('자재상하차')" id="filter-자재상하차" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">자재상하차</button>
+                    <button onclick="filterHistory('부채 추가 (증액)')" id="filter-부채추가" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">부채 추가</button>
+                </div>
+
+                <div id="historyList" class="space-y-3 max-h-120 overflow-y-auto pr-1">
+                    <div class="text-center py-8 text-slate-400 text-sm">내역을 불러오는 중입니다...</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="max-w-2xl w-full mx-auto px-4 mt-6 text-center text-xs text-slate-400">
+        <p>© 부채 탕감 프로젝트 Dashboard · 오픈소스 라이선스</p>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyALXHXpvuhIhXZhBRxPQHnXyRoQmFjhHGk",
+            authDomain: "debt-tracker-33c16.firebaseapp.com",
+            databaseURL: "https://debt-tracker-33c16-default-rtdb.firebaseio.com/",
+            projectId: "debt-tracker-33c16",
+            storageBucket: "debt-tracker-33c16.firebasestorage.app",
+            messagingSenderId: "526281486050",
+            appId: "1:526281486050:web:e8ed8f28eaa5e9701bb8bb"
+        };
+
+        let initialDebt = 50000000; 
+        let balance = initialDebt; 
+        let history = [];
+        let startDate = "2026-05-01"; 
+        let currentFilter = '전체';
+        let isFirebaseActive = false;
+        let database = null;
+        let compressedImageBase64 = "";
+
+        let liveAccruedInterest = 0;
+        let principalBalanceWithoutLiveInterest = initialDebt;
+        let accumulatedTotalPrincipalToRepay = initialDebt; 
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('dateInput').value = todayStr;
+            setupImageCompression();
+            updateDDayCountdown();
+        });
+
+        function updateDDayCountdown() {
+            const targetDate = new Date('2031-05-01');
+            const today = new Date();
+            targetDate.setHours(0,0,0,0);
+            today.setHours(0,0,0,0);
+            
+            const diffTime = targetDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            const dDayBadge = document.getElementById('dDayBadge');
+            if (diffDays > 0) {
+                dDayBadge.innerText = "D-" + diffDays;
+                dDayBadge.className = "bg-indigo-600 text-white font-black px-2 py-0.5 rounded-md text-[11px] shadow-xs";
+            } else if (diffDays === 0) {
+                dDayBadge.innerText = "D-Day 🎉";
+                dDayBadge.className = "bg-emerald-600 text-white font-black px-2 py-0.5 rounded-md text-[11px] shadow-xs animate-pulse";
+            } else {
+                dDayBadge.innerText = "상환 기한 종료";
+                dDayBadge.className = "bg-rose-600 text-white font-black px-2 py-0.5 rounded-md text-[11px] shadow-xs";
+            }
+        }
+
+        function setupImageCompression() {
+            document.getElementById('imageInput').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) {
+                    compressedImageBase64 = "";
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 500;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        compressedImageBase64 = canvas.toDataURL('image/jpeg', 0.65);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                database = firebase.database();
+                isFirebaseActive = true;
+                document.getElementById('storageBadge').innerText = "실시간 서버 모드";
+                document.getElementById('storageBadge').className = "text-xs px-2.5 py-1 rounded-md font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+            } catch (e) {
+                console.error("Firebase 초기화 실패", e);
+            }
+        }
+
+        if (isFirebaseActive) {
+            database.ref('debt_project').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    initialDebt = data.initialDebt !== undefined ? data.initialDebt : 50000000;
+                    startDate = data.startDate || "2026-05-01";
+                    const rawHistory = data.history || [];
+                    history = Array.isArray(rawHistory) ? rawHistory : Object.values(rawHistory);
+                } else {
+                    initialDebt = 50000000;
+                    startDate = "2026-05-01";
+                    history = [];
+                }
+                document.getElementById('startDateInput').value = startDate;
+                recalculateBalances();
+                updateUI();
+            });
+        } else {
+            initialDebt = localStorage.getItem('premium_debt_initial_amt') ? parseInt(localStorage.getItem('premium_debt_initial_amt')) : 50000000;
+            balance = localStorage.getItem('premium_debt_balance') ? parseInt(localStorage.getItem('premium_debt_balance')) : initialDebt;
+            startDate = localStorage.getItem('premium_debt_start_date') || "2026-05-01";
+            const rawLocalStorage = localStorage.getItem('premium_debt_history');
+            let parsedHistory = rawLocalStorage ? JSON.parse(rawLocalStorage) : [];
+            history = Array.isArray(parsedHistory) ? parsedHistory : Object.values(parsedHistory);
+            document.getElementById('startDateInput').value = startDate;
+            recalculateBalances();
+            setTimeout(updateUI, 100);
+        }
+
+        function changeStartDate(val) {
+            if (!val) return;
+            startDate = val;
+            recalculateBalances();
+            syncData();
+        }
+
+        function toggleButtonText(val) {
+            const label = document.getElementById('amountLabel');
+            const btnText = document.getElementById('submitBtnText');
+            if (val === '부채 추가 (증액)') {
+                label.innerText = "추가 증액 금액 (원)";
+                btnText.innerText = "새로운 부채 내역 추가하기";
+            } else {
+                label.innerText = "탕감 금액 (원)";
+                btnText.innerText = "탕감 내역 반영하기";
+            }
+        }
+
+        function sortHistoryData() {
+            if (!Array.isArray(history)) history = [];
+            history.sort((a, b) => {
+                if (!a.date || !b.date) return 0;
+                return b.date.localeCompare(a.date) || (b.id || 0) - (a.id || 0);
+            });
+        }
+
+        function recalculateBalances() {
+            if (!Array.isArray(history)) history = [];
+            let chronologicalHistory = [...history].sort((a, b) => a.date.localeCompare(b.date) || (a.id || 0) - (b.id || 0));
+            
+            let currentPrincipal = initialDebt;
+            let currentInterestPool = 0;
+            let currentTimelineDate = startDate;
+            accumulatedTotalPrincipalToRepay = initialDebt; 
+
+            chronologicalHistory.forEach(item => {
+                let daysPassed = 0;
+                if (item.date > currentTimelineDate) {
+                    const diffTime = Math.abs(new Date(item.date) - new Date(currentTimelineDate));
+                    daysPassed = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                }
+                
+                let periodInterest = Math.round(currentPrincipal * 0.03 * (daysPassed / 365));
+                if (periodInterest < 0) periodInterest = 0;
+                currentInterestPool += periodInterest;
+                
+                if (item.category === '부채 추가 (증액)') {
+                    currentPrincipal += (item.amount || 0);
+                    accumulatedTotalPrincipalToRepay += (item.amount || 0);
+                    item.paidInterest = 0;
+                    item.paidPrincipal = 0;
+                } else {
+                    let amountToPay = item.amount || 0;
+                    
+                    let interestPaid = Math.min(amountToPay, currentInterestPool);
+                    currentInterestPool -= interestPaid;
+                    amountToPay -= interestPaid;
+                    
+                    let principalPaid = Math.min(amountToPay, currentPrincipal);
+                    currentPrincipal -= principalPaid;
+                    
+                    item.paidInterest = interestPaid;
+                    item.paidPrincipal = principalPaid;
+                }
+                
+                item.remainingPrincipal = currentPrincipal;
+                item.remainingInterest = currentInterestPool;
+                currentTimelineDate = item.date;
+            });
+            
+            let todayStr = new Date().toISOString().split('T')[0];
+            let finalDaysPassed = 0;
+            if (todayStr > currentTimelineDate) {
+                const diffTime = Math.abs(new Date(todayStr) - new Date(currentTimelineDate));
+                finalDaysPassed = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            }
+            
+            let finalLiveInterest = Math.round(currentPrincipal * 0.03 * (finalDaysPassed / 365));
+            if (finalLiveInterest < 0) finalLiveInterest = 0;
+            
+            liveAccruedInterest = currentInterestPool + finalLiveInterest;
+            principalBalanceWithoutLiveInterest = currentPrincipal;
+            balance = currentPrincipal; 
+            
+            history = chronologicalHistory.sort((a, b) => b.date.localeCompare(a.date) || (b.id || 0) - (a.id || 0));
+        }
+
+        function updateUI() {
+            const totalDebtWeight = accumulatedTotalPrincipalToRepay;
+            const principalCleared = totalDebtWeight - principalBalanceWithoutLiveInterest;
+            const progressPercent = totalDebtWeight > 0 ? ((principalCleared / totalDebtWeight) * 100).toFixed(1) : 100;
+
+            document.getElementById('principalDisplay').innerText = principalBalanceWithoutLiveInterest.toLocaleString() + '원';
+            document.getElementById('interestDisplay').innerText = liveAccruedInterest.toLocaleString() + '원';
+            
+            document.getElementById('totalClearedDisplay').innerText = '총 원금 탕감액: ' + (principalCleared > 0 ? principalCleared.toLocaleString() : '0') + '원';
+            document.getElementById('progressPercent').innerText = '순수 원금 상환율: ' + (progressPercent >= 0 ? progressPercent : '0.0') + '%';
+            document.getElementById('progressBar').style.width = (progressPercent >= 0 ? Math.min(progressPercent, 100) : 0) + '%';
+
+            updateDDayCountdown();
+            renderHistoryList();
+        }
+
+        function renderHistoryList() {
+            const historyList = document.getElementById('historyList');
+            if (!Array.isArray(history)) history = [];
+            
+            const filteredHistory = history.filter(item => {
+                if (!item) return false;
+                if (currentFilter === '전체') return true;
+                if (currentFilter === '부채 추가 (증액)') return item.category === '부채 추가 (증액)';
+                return item.category === currentFilter;
+            });
+
+            if (filteredHistory.length === 0) {
+                historyList.innerHTML = `
+                    <div class="text-center py-12 border-2 border-dashed border-slate-100 rounded-2xl">
+                        <p class="text-slate-400 text-sm font-medium">조건에 맞는 내역이 존재하지 않습니다.</p>
+                    </div>`;
+                return;
+            }
+
+            historyList.innerHTML = filteredHistory.map((log) => {
+                let badgeStyle = "bg-slate-100 text-slate-700 border-slate-200";
+                let amtSignColor = "text-slate-700 font-extrabold";
+                let prefixSign = "";
+                let subDetailsLine = "";
+
+                if (log.category === '알바') badgeStyle = "bg-indigo-50 text-indigo-600 border-indigo-100";
+                if (log.category === '용돈 차감') badgeStyle = "bg-amber-50 text-amber-600 border-amber-100";
+                if (log.category === '특별 탕감') badgeStyle = "bg-emerald-50 text-emerald-600 border-emerald-100";
+                if (log.category === '현장사진') badgeStyle = "bg-sky-50 text-sky-600 border-sky-100";
+                if (log.category === '배송') badgeStyle = "bg-purple-50 text-purple-600 border-purple-100";
+                if (log.category === '자재상하차') badgeStyle = "bg-rose-50 text-rose-600 border-rose-100";
+                
+                if (log.category === '부채 추가 (증액)') {
+                    badgeStyle = "bg-emerald-950 text-emerald-400 border-emerald-800";
+                    amtSignColor = "text-emerald-500 font-black";
+                    prefixSign = "+ ";
+                    subDetailsLine = `<p class="text-[11px] text-slate-400 font-medium">원금 증액 후 원금 잔고: ${log.remainingPrincipal.toLocaleString()}원</p>`;
+                } else {
+                    amtSignColor = "text-red-500 font-extrabold";
+                    prefixSign = "- ";
+                    subDetailsLine = `
+                        <div class="text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-100 p-1.5 rounded mt-1 space-y-0.5 w-fit">
