@@ -81,12 +81,10 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 mb-1">탕감 항목 (분류)</label>
-                        <!-- ⭐ 더블클릭 이벤트(ondblclick) 추가 -->
                         <select id="category" ondblclick="addCustomCategoryDirectly()" title="더블클릭하여 맞춤 항목 직접 입력" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium">
                             <option value="알바">알바비 정산</option>
                             <option value="용돈 차감">이번 달 용돈 차감</option>
                             <option value="특별 탕감">특별 상환 / 격려 상환</option>
-                            <!-- ⭐ 신규 카테고리 3종 추가 -->
                             <option value="현장사진">현장사진</option>
                             <option value="배송">배송</option>
                             <option value="자재상하차">자재상하차</option>
@@ -140,7 +138,7 @@
                     </div>
                 </div>
 
-                <!-- 필터 탭 (새 카테고리 적용 확장) -->
+                <!-- 필터 탭 -->
                 <div class="flex gap-1.5 border-b border-slate-100 pb-3 mb-3 overflow-x-auto">
                     <button onclick="filterHistory('전체')" id="filter-전체" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 text-white transition cursor-pointer whitespace-nowrap">전체</button>
                     <button onclick="filterHistory('알바')" id="filter-알바" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">알바</button>
@@ -166,7 +164,6 @@
     </div>
 
     <script>
-        // ⚠️ [필수 설정] 본인의 Firebase 정보로 교체하세요!
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_AUTH_DOMAIN",
@@ -185,14 +182,12 @@
         let database = null;
         let compressedImageBase64 = "";
 
-        // 페이지 가동 시 초기 설정
         window.addEventListener('DOMContentLoaded', () => {
             const todayStr = new Date().toISOString().split('T')[0];
             document.getElementById('dateInput').value = todayStr;
             setupImageCompression();
         });
 
-        // 이미지 자동 압축 가동
         function setupImageCompression() {
             document.getElementById('imageInput').addEventListener('change', function(e) {
                 const file = e.target.files[0];
@@ -226,7 +221,6 @@
             });
         }
 
-        // Firebase 활성화 여부 검증
         if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
             try {
                 firebase.initializeApp(firebaseConfig);
@@ -235,17 +229,19 @@
                 document.getElementById('storageBadge').innerText = "실시간 서버 모드";
                 document.getElementById('storageBadge').className = "text-xs px-2.5 py-1 rounded-md font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
             } catch (e) {
-                console.error("Firebase 초기화 실패, 로컬 모드로 전환합니다.", e);
+                console.error("Firebase 초기화 실패", e);
             }
         }
 
-        // 데이터 로드 리스너
+        // ⭐ 핵심 수정 단계: 서버에서 가져온 데이터가 배열이 아니더라도 완벽하게 배열로 복구 및 정렬하는 가드레일 코드
         if (isFirebaseActive) {
             database.ref('debt_project').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     balance = data.balance !== undefined ? data.balance : INITIAL_DEBT;
-                    history = data.history || [];
+                    const rawHistory = data.history || [];
+                    // 파이어베이스가 Object로 강제 변환한 데이터를 강제로 순수 Array 배열로 복집합니다.
+                    history = Array.isArray(rawHistory) ? rawHistory : Object.values(rawHistory);
                 } else {
                     balance = INITIAL_DEBT;
                     history = [];
@@ -255,13 +251,19 @@
             });
         } else {
             balance = localStorage.getItem('premium_debt_balance') ? parseInt(localStorage.getItem('premium_debt_balance')) : INITIAL_DEBT;
-            history = localStorage.getItem('premium_debt_history') ? JSON.parse(localStorage.getItem('premium_debt_history')) : [];
+            const rawLocalStorage = localStorage.getItem('premium_debt_history');
+            let parsedHistory = rawLocalStorage ? JSON.parse(rawLocalStorage) : [];
+            history = Array.isArray(parsedHistory) ? parsedHistory : Object.values(parsedHistory);
             sortHistoryData();
             setTimeout(updateUI, 100);
         }
 
         function sortHistoryData() {
-            history.sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+            if (!Array.isArray(history)) history = [];
+            history.sort((a, b) => {
+                if (!a.date || !b.date) return 0;
+                return b.date.localeCompare(a.date) || (b.id || 0) - (a.id || 0);
+            });
         }
 
         function updateUI() {
@@ -276,11 +278,12 @@
             renderHistoryList();
         }
 
-        // 내역 리스트 렌더링
         function renderHistoryList() {
             const historyList = document.getElementById('historyList');
+            if (!Array.isArray(history)) history = [];
             
             const filteredHistory = history.filter(item => {
+                if (!item) return false;
                 if (currentFilter === '전체') return true;
                 return item.category === currentFilter;
             });
@@ -312,7 +315,6 @@
                     <div class="bg-white border border-slate-100 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center transition hover:shadow-md hover:border-slate-200/60 duration-200 gap-4">
                         <div class="space-y-1 w-full md:w-3/4">
                             <div class="flex items-center gap-2">
-                                <!-- ⭐ 신규: 분류 명칭을 더블클릭해서 직접 수정 가능하도록 변경 -->
                                 <span class="text-xs font-bold border px-2 py-0.5 rounded-md ${badgeStyle} cursor-pointer select-none"
                                       ondblclick="editCategoryDirect(${log.id})" title="더블클릭하여 분류 태그 직접 수정">
                                     ${log.category}
@@ -328,8 +330,8 @@
                         <div class="text-right w-full md:w-1/4 flex justify-between md:justify-end items-center md:items-end md:flex-col">
                             <span class="md:hidden text-xs text-slate-400">탕감액/잔액</span>
                             <div>
-                                <p class="text-base font-extrabold text-red-500">- ${log.amount.toLocaleString()}원</p>
-                                <p class="text-[11px] font-medium text-slate-400">잔액: ${log.balance.toLocaleString()}원</p>
+                                <p class="text-base font-extrabold text-red-500">- ${(log.amount || 0).toLocaleString()}원</p>
+                                <p class="text-[11px] font-medium text-slate-400">잔액: ${(log.balance || 0).toLocaleString()}원</p>
                             </div>
                         </div>
                     </div>
@@ -337,7 +339,6 @@
             }).join('');
         }
 
-        // ⭐ 신규 기능 1: 새로운 내역 등록할 때 드롭다운 선택 박스를 [더블클릭]해서 커스텀 항목 바로 주입하는 함수
         function addCustomCategoryDirectly() {
             const customCat = prompt("📋 목록에 없는 새로운 탕감 항목 분류를 직접 입력하세요:");
             if (!customCat || !customCat.trim()) return;
@@ -355,12 +356,12 @@
             const newOption = document.createElement('option');
             newOption.value = trimmed;
             newOption.text = trimmed;
-            select.add(newOption, select.options[select.options.length - 1]); // '기타' 바로 위에 배치
+            select.add(newOption, select.options[select.options.length - 1]);
             select.value = trimmed;
         }
 
-        // ⭐ 신규 기능 2: 이미 등록된 내역의 분류 태그를 리스트에서 직접 [더블클릭]해 자유롭게 텍스트를 수정하는 함수
         function editCategoryDirect(id) {
+            if (!Array.isArray(history)) return;
             const item = history.find(log => log.id === id);
             if (!item) return;
 
@@ -371,8 +372,8 @@
             syncData();
         }
 
-        // 메모 내역 더블클릭 수정
         function editDescriptionDirect(id) {
+            if (!Array.isArray(history)) return;
             const item = history.find(log => log.id === id);
             if (!item) return;
 
@@ -383,7 +384,6 @@
             syncData();
         }
 
-        // 동기화 공통 처리 함수
         function syncData() {
             if (isFirebaseActive) {
                 database.ref('debt_project').set({
@@ -446,6 +446,7 @@
                 image: compressedImageBase64
             };
 
+            if (!Array.isArray(history)) history = [];
             const updatedHistory = [record, ...history];
             history = updatedHistory;
             sortHistoryData();
@@ -501,17 +502,17 @@
         }
 
         function exportToCSV() {
-            if (history.length === 0) {
+            if (!Array.isArray(history) || history.length === 0) {
                 alert('내보낼 데이터가 없습니다.');
                 return;
             }
-            let csvContent = "﻿"; 
-            csvContent += "날짜,분류,탕감금액,남은잔액,상세내용
-";
+            let csvContent = "\uFEFF"; 
+            csvContent += "날짜,분류,탕감금액,남은잔액,상세내용\n";
 
             history.forEach(log => {
-                csvContent += `"${log.date}","${log.category}",${log.amount},${log.balance},"${log.description || ''}"
-`;
+                if (log) {
+                    csvContent += `"${log.date || ''}","${log.category || ''}",${log.amount || 0},${log.balance || 0},"${log.description || ''}"\n`;
+                }
             });
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
