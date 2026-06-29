@@ -31,14 +31,21 @@
                 <div>
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 backdrop-blur-xs mb-1">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        연 3% 독립 정산 및 5년 만기 목표 플랫폼
+                        원금 우선 삭감 & 연 3% 독립 정산 플랫폼
                     </span>
                     <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white">부채 탕감 프로젝트</h1>
                     <p class="text-slate-400 text-xs md:text-sm mt-1 font-light">청인마루 현장 데이터 기록 및 실시간 관리 대시보드</p>
                     
-                    <div class="flex items-center gap-1 text-[11px] text-slate-300 mt-3 bg-white/10 border border-white/15 rounded-lg px-2 py-1 w-fit">
-                        <span>📅 차용 시작일 :</span>
-                        <input type="date" id="startDateInput" onchange="changeStartDate(this.value)" class="bg-transparent text-white focus:outline-none font-bold text-[11px] cursor-pointer">
+                    <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-300 mt-4">
+                        <div class="flex items-center gap-1 bg-white/10 border border-white/15 rounded-lg px-2 py-1">
+                            <span>📅 시작일:</span>
+                            <input type="date" id="startDateInput" onchange="changeStartDate(this.value)" class="bg-transparent text-white focus:outline-none font-bold text-[11px] cursor-pointer">
+                        </div>
+                        <div class="flex items-center gap-1 bg-white/10 border border-white/15 rounded-lg px-2 py-1">
+                            <span>💰 최초 원금:</span>
+                            <input type="number" id="initialDebtInput" onchange="changeInitialDebt(this.value)" class="bg-transparent text-white focus:outline-none font-bold text-[11px] w-24 text-right">
+                            <span>원</span>
+                        </div>
                     </div>
                 </div>
                 <div id="storageBadge" class="text-xs px-2.5 py-1 rounded-md font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
@@ -85,7 +92,7 @@
                         </svg>
                     </div>
                     <div>
-                        <h3 class="text-lg font-bold text-slate-900">새로운 내역 등록 (탕감 / 부채 추가)</h3>
+                        <h3 class="text-lg font-bold text-slate-900">새로운 내역 등록 (탕감 / 금액 조정)</h3>
                         <p class="text-[11px] text-indigo-600 font-medium">💡 탕감 항목 선택 박스를 [더블클릭]하면 목록에 없는 항목을 직접 입력할 수 있습니다!</p>
                     </div>
                 </div>
@@ -102,6 +109,7 @@
                             <option value="자재상하차">자재상하차</option>
                             <option value="기타">기타</option>
                             <option value="부채 추가 (증액)" class="text-emerald-600 font-bold">➕ 부채 추가 (증액)</option>
+                            <option value="부채 감소 (감액)" class="text-rose-600 font-bold">➖ 부채 감소 (감액)</option>
                         </select>
                     </div>
                     <div>
@@ -140,7 +148,7 @@
                         </div>
                         <div>
                             <h3 class="text-lg font-bold text-slate-900">전체 정산 히스토리 내역</h3>
-                            <p class="text-[11px] text-indigo-600 font-medium">💡 분류 태그와 상세 메모를 각각 [더블클릭]하면 현장에서 수정 가능합니다.</p>
+                            <p class="text-[11px] text-indigo-600 font-medium">💡 분류 태그와 상세 메모를 각각 [더블클릭]하면 목록에서 직접 수정할 수 있습니다.</p>
                         </div>
                     </div>
                     <div class="flex gap-2">
@@ -154,10 +162,10 @@
                     <button onclick="filterHistory('알바')" id="filter-알바" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">알바</button>
                     <button onclick="filterHistory('용돈 차감')" id="filter-용돈" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">용돈 차감</button>
                     <button onclick="filterHistory('특별 탕감')" id="filter-특별" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">특별 탕감</button>
-                    <button onclick="filterHistory('현장사진')" id="filter-현장사진" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">현장사진</button>
                     <button onclick="filterHistory('배송')" id="filter-배송" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">배송</button>
                     <button onclick="filterHistory('자재상하차')" id="filter-자재상하차" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">자재상하차</button>
-                    <button onclick="filterHistory('부채 추가 (증액)')" id="filter-부채추가" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">부채 추가</button>
+                    <button onclick="filterHistory('부채 추가 (증액)')" id="filter-부채추가" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">증액</button>
+                    <button onclick="filterHistory('부채 감소 (감액)')" id="filter-부채감소" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">감액</button>
                 </div>
 
                 <div id="historyList" class="space-y-3 max-h-120 overflow-y-auto pr-1">
@@ -285,6 +293,7 @@
                     history = [];
                 }
                 document.getElementById('startDateInput').value = startDate;
+                document.getElementById('initialDebtInput').value = initialDebt;
                 recalculateBalances();
                 updateUI();
             });
@@ -297,6 +306,7 @@
             let tempArr = Array.isArray(parsedHistory) ? parsedHistory : Object.values(parsedHistory);
             history = tempArr.filter(item => item !== null && item !== undefined && item.id);
             document.getElementById('startDateInput').value = startDate;
+            document.getElementById('initialDebtInput').value = initialDebt;
             recalculateBalances();
             setTimeout(updateUI, 100);
         }
@@ -308,12 +318,27 @@
             syncData();
         }
 
+        function changeInitialDebt(val) {
+            const num = parseInt(val);
+            if (isNaN(num) || num < 0) {
+                alert('올바른 금액을 숫자로 입력해주세요.');
+                return;
+            }
+            initialDebt = num;
+            recalculateBalances();
+            syncData();
+        }
+
+        // ⭐ UI 동적 라벨 변경 (감액 추가)
         function toggleButtonText(val) {
             const label = document.getElementById('amountLabel');
             const btnText = document.getElementById('submitBtnText');
             if (val === '부채 추가 (증액)') {
                 label.innerText = "추가 증액 금액 (원)";
                 btnText.innerText = "새로운 부채 내역 추가하기";
+            } else if (val === '부채 감소 (감액)') {
+                label.innerText = "부채 감액 금액 (원)";
+                btnText.innerText = "부채 감액 반영하기";
             } else {
                 label.innerText = "탕감 금액 (원)";
                 btnText.innerText = "탕감 내역 반영하기";
@@ -329,7 +354,7 @@
             history = safeHistory;
         }
 
-        // ⭐ 핵심 변경: 원금 100% 우선 차감 적용으로 이자 증식 억제
+        // ⭐ 감액 기능 추가 및 원금 100% 우선 차감 로직
         function recalculateBalances() {
             if (!Array.isArray(history)) history = [];
             let safeHistory = history.filter(item => item && item.date);
@@ -356,15 +381,22 @@
                     accumulatedTotalPrincipalToRepay += (item.amount || 0);
                     item.paidInterest = 0;
                     item.paidPrincipal = 0;
+                } else if (item.category === '부채 감소 (감액)') {
+                    // 감액은 상환이 아니라 권한으로 원금과 전체 목표액 자체를 깎아버리는 로직
+                    let reduction = Math.min((item.amount || 0), currentPrincipal);
+                    currentPrincipal -= reduction;
+                    accumulatedTotalPrincipalToRepay -= reduction;
+                    if(accumulatedTotalPrincipalToRepay < currentPrincipal) accumulatedTotalPrincipalToRepay = currentPrincipal;
+                    item.paidInterest = 0;
+                    item.paidPrincipal = 0;
                 } else {
                     let amountToPay = item.amount || 0;
                     
-                    // ⭐ 원금부터 100% 먼저 무자비하게 깎아버립니다! (아들 유리)
+                    // 상환 시 무조건 원금부터 100% 깎습니다.
                     let principalPaid = Math.min(amountToPay, currentPrincipal);
                     currentPrincipal -= principalPaid;
                     amountToPay -= principalPaid;
                     
-                    // 만약 원금을 다 깎고도 돈이 남으면 그때 누적된 이자를 깎습니다.
                     let interestPaid = Math.min(amountToPay, currentInterestPool);
                     currentInterestPool -= interestPaid;
                     
@@ -418,6 +450,7 @@
                 if (!item) return false;
                 if (currentFilter === '전체') return true;
                 if (currentFilter === '부채 추가 (증액)') return item.category === '부채 추가 (증액)';
+                if (currentFilter === '부채 감소 (감액)') return item.category === '부채 감소 (감액)';
                 return item.category === currentFilter;
             });
 
@@ -443,15 +476,20 @@
                 if (log.category === '배송') badgeStyle = "bg-purple-50 text-purple-600 border-purple-100";
                 if (log.category === '자재상하차') badgeStyle = "bg-rose-50 text-rose-600 border-rose-100";
                 
+                // ⭐ 리스트 내 증액/감액 디자인 동적 처리
                 if (log.category === '부채 추가 (증액)') {
                     badgeStyle = "bg-emerald-950 text-emerald-400 border-emerald-800";
                     amtSignColor = "text-emerald-500 font-black";
                     prefixSign = "+ ";
                     subDetailsLine = `<p class="text-[11px] text-slate-400 font-medium">원금 증액 후 원금 잔고: ${(log.remainingPrincipal || 0).toLocaleString()}원</p>`;
+                } else if (log.category === '부채 감소 (감액)') {
+                    badgeStyle = "bg-rose-950 text-rose-400 border-rose-800";
+                    amtSignColor = "text-rose-500 font-black";
+                    prefixSign = "- ";
+                    subDetailsLine = `<p class="text-[11px] text-slate-400 font-medium">부채 감액 후 원금 잔고: ${(log.remainingPrincipal || 0).toLocaleString()}원</p>`;
                 } else {
                     amtSignColor = "text-red-500 font-extrabold";
                     prefixSign = "- ";
-                    // ⭐ 텍스트 수정: 이자가 아닌 원금이 무조건 우선 삭감됨을 텍스트 영수증에 명시
                     subDetailsLine = `
                         <div class="text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-100 p-1.5 rounded mt-1 space-y-0.5 w-fit">
                             <p class="text-indigo-600">📉 원금 우선 삭감: -${(log.paidPrincipal || 0).toLocaleString()}원 (남은 원금: ${(log.remainingPrincipal || 0).toLocaleString()}원)</p>
@@ -587,6 +625,7 @@
             
             let targetId = `filter-${category}`;
             if (category === '부채 추가 (증액)') targetId = 'filter-부채추가';
+            if (category === '부채 감소 (감액)') targetId = 'filter-부채감소';
             const targetBtn = document.getElementById(targetId);
             if (targetBtn) {
                 targetBtn.className = "filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 text-white transition cursor-pointer whitespace-nowrap";
@@ -657,6 +696,7 @@
                     localStorage.removeItem('premium_debt_balance');
                     localStorage.removeItem('premium_debt_history');
                     localStorage.removeItem('premium_debt_start_date');
+                    localStorage.removeItem('premium_debt_initial_amt');
                     balance = initialDebt;
                     history = [];
                     startDate = "2026-05-01";
@@ -676,7 +716,8 @@
 
             history.forEach(log => {
                 if (log) {
-                    const prefix = log.category === '부채 추가 (증액)' ? '+' : '-';
+                    let prefix = '-';
+                    if (log.category === '부채 추가 (증액)') prefix = '+';
                     csvContent += '"' + (log.date || '') + '","' + (log.category || '') + '","' + prefix + (log.amount || 0) + '",' + (log.remainingPrincipal || 0) + ',' + (log.remainingInterest || 0) + ',"' + (log.description || '') + '"\n';
                 }
             });
