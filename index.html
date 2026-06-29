@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>부채 탕감 프로젝트 Dashboard</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
@@ -23,6 +25,7 @@
 <body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between pb-12">
 
     <div class="w-full max-w-2xl mx-auto px-4 pt-6 md:pt-10 flex-grow">
+        <!-- 상단 헤더 카드 -->
         <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden mb-6">
             <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500 rounded-full opacity-10 blur-xl"></div>
             <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-500 rounded-full opacity-10 blur-xl"></div>
@@ -31,21 +34,15 @@
                 <div>
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 backdrop-blur-xs mb-1">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        실시간 부채 조정 및 연 3% 이자 동기화 플랫폼
+                        연 3% 독립 정산 및 5년 만기 목표 플랫폼
                     </span>
                     <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white">부채 탕감 프로젝트</h1>
                     <p class="text-slate-400 text-xs md:text-sm mt-1 font-light">청인마루 현장 데이터 기록 및 실시간 관리 대시보드</p>
                     
-                    <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-300 mt-4">
-                        <div class="flex items-center gap-1 bg-white/10 border border-white/15 rounded-lg px-2 py-1">
-                            <span>📅 차용 시작일:</span>
-                            <input type="date" id="startDateInput" onchange="changeStartDate(this.value)" class="bg-transparent text-white focus:outline-none font-bold text-[11px] cursor-pointer">
-                        </div>
-                        <div class="flex items-center gap-1 bg-white/10 border border-white/15 rounded-lg px-2 py-1">
-                            <span>💰 최초 원금:</span>
-                            <input type="number" id="initialDebtInput" onchange="changeInitialDebt(this.value)" class="bg-transparent text-white focus:outline-none font-bold text-[11px] w-20 text-right">
-                            <span>원</span>
-                        </div>
+                    <!-- 차용 시작일 고정 표시 바 -->
+                    <div class="flex items-center gap-1 text-[11px] text-slate-300 mt-3 bg-white/10 border border-white/15 rounded-lg px-2 py-1 w-fit">
+                        <span>📅 차용 시작일 :</span>
+                        <input type="date" id="startDateInput" onchange="changeStartDate(this.value)" class="bg-transparent text-white focus:outline-none font-bold text-[11px] cursor-pointer">
                     </div>
                 </div>
                 <div id="storageBadge" class="text-xs px-2.5 py-1 rounded-md font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
@@ -53,20 +50,29 @@
                 </div>
             </div>
 
-            <div class="mt-6 text-center bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10">
-                <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">총 남은 부채 (원금 + 이자 총액)</p>
-                <h2 id="balanceDisplay" class="text-3xl md:text-4xl font-black text-white mt-1 tracking-tight">로딩 중...</h2>
-                
-                <div class="flex justify-center gap-4 text-xs mt-2 text-slate-300 font-medium">
-                    <span id="principalDisplay">원금 잔액: -원</span>
-                    <span class="text-white/20">|</span>
-                    <span id="interestDisplay">실시간 누적 이자: -원</span>
+            <!-- ⭐ 대시보드 메인 잔액 (원금과 이자를 완벽하게 1:1 독립 분리) -->
+            <div class="mt-6 bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10">
+                <div class="grid grid-cols-2 gap-4 divide-x divide-white/10">
+                    <div class="text-center pr-2">
+                        <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">남은 원금 총액</p>
+                        <h2 id="principalDisplay" class="text-2xl md:text-3xl font-black text-white mt-1 tracking-tight">로딩 중...</h2>
+                    </div>
+                    <div class="text-center pl-4">
+                        <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">남은 이자 총액 (연 3%)</p>
+                        <h2 id="interestDisplay" class="text-2xl md:text-3xl font-black text-amber-400 mt-1 tracking-tight">로딩 중...</h2>
+                    </div>
                 </div>
                 
-                <div class="mt-5">
+                <!-- ⭐ 신규: 5년 만기 상환 전액 목표 가이드라인 및 실시간 D-Day 카운트다운 -->
+                <div class="mt-5 text-xs font-medium text-slate-300 bg-black/20 border border-white/5 rounded-xl py-2.5 px-3 flex justify-between items-center">
+                    <span>🎯 5년 만기 전액 상환 목표 기한: <b class="text-white">2031년 5월 1일</b></span>
+                    <span id="dDayBadge" class="bg-indigo-600 text-white font-black px-2 py-0.5 rounded-md text-[11px] shadow-xs">D-Day</span>
+                </div>
+                
+                <div class="mt-4">
                     <div class="flex justify-between text-xs font-semibold text-slate-400 mb-1.5">
-                        <span id="progressPercent">상환율: 0%</span>
-                        <span id="totalClearedDisplay">총 원금탕감액: 0원</span>
+                        <span id="progressPercent">순수 원금 상환율: 0%</span>
+                        <span id="totalClearedDisplay">총 원금 탕감액: 0원</span>
                     </div>
                     <div class="w-full bg-slate-800 rounded-full h-3 overflow-hidden p-0.5 border border-slate-700">
                         <div id="progressBar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
@@ -75,8 +81,10 @@
             </div>
         </div>
 
+        <!-- 메인 컨텐츠 -->
         <div class="space-y-6">
             
+            <!-- 1. 탕감 및 부채 추가 등록 카드 -->
             <div class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100">
                 <div class="flex items-center gap-2 mb-4">
                     <div class="p-2 rounded-xl bg-indigo-50 text-indigo-600">
@@ -86,7 +94,7 @@
                     </div>
                     <div>
                         <h3 class="text-lg font-bold text-slate-900">새로운 내역 등록 (탕감 / 부채 추가)</h3>
-                        <p class="text-[11px] text-indigo-600 font-medium">💡 새로운 빚이 추가되었을 때는 [부채 추가 (증액)] 항목을 선택해 등록하시면 됩니다.</p>
+                        <p class="text-[11px] text-indigo-600 font-medium">💡 탕감 항목 선택 박스를 [더블클릭]하면 목록에 없는 항목을 직접 입력할 수 있습니다!</p>
                     </div>
                 </div>
 
@@ -130,6 +138,7 @@
                 </button>
             </div>
 
+            <!-- 2. 히스토리 리스트 카드 -->
             <div class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100">
                 <div class="flex justify-between items-center mb-4">
                     <div class="flex items-center gap-2">
@@ -149,6 +158,7 @@
                     </div>
                 </div>
 
+                <!-- 필터 탭 -->
                 <div class="flex gap-1.5 border-b border-slate-100 pb-3 mb-3 overflow-x-auto">
                     <button onclick="filterHistory('전체')" id="filter-전체" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 text-white transition cursor-pointer whitespace-nowrap">전체</button>
                     <button onclick="filterHistory('알바')" id="filter-알바" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">알바</button>
@@ -160,6 +170,7 @@
                     <button onclick="filterHistory('부채 추가 (증액)')" id="filter-부채추가" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">부채 추가</button>
                 </div>
 
+                <!-- 히스토리 스크롤 영역 -->
                 <div id="historyList" class="space-y-3 max-h-120 overflow-y-auto pr-1">
                     <div class="text-center py-8 text-slate-400 text-sm">내역을 불러오는 중입니다...</div>
                 </div>
@@ -168,6 +179,7 @@
         </div>
     </div>
 
+    <!-- 푸터 가이드 -->
     <div class="max-w-2xl w-full mx-auto px-4 mt-6 text-center text-xs text-slate-400">
         <p>© 부채 탕감 프로젝트 Dashboard · 오픈소스 라이선스</p>
     </div>
@@ -186,14 +198,14 @@
         let initialDebt = 50000000; 
         let balance = initialDebt; 
         let history = [];
-        let startDate = "2026-01-01"; 
+        let startDate = "2026-05-01"; // ⭐ 대시보드 요청 사항 반영: 2026년 5월 1일 고정 초기화
         let currentFilter = '전체';
         let isFirebaseActive = false;
         let database = null;
         let compressedImageBase64 = "";
 
+        // 원리금 완벽 독립 제어 전역 변수
         let liveAccruedInterest = 0;
-        let liveTotalBalance = initialDebt;
         let principalBalanceWithoutLiveInterest = initialDebt;
         let accumulatedTotalPrincipalToRepay = initialDebt; 
 
@@ -201,7 +213,31 @@
             const todayStr = new Date().toISOString().split('T')[0];
             document.getElementById('dateInput').value = todayStr;
             setupImageCompression();
+            updateDDayCountdown();
         });
+
+        // ⭐ 5년 만기 전액 상환 카운트다운 연산 디스플레이 (목표일: 2031년 5월 1일)
+        function updateDDayCountdown() {
+            const targetDate = new Date('2031-05-01');
+            const today = new Date();
+            targetDate.setHours(0,0,0,0);
+            today.setHours(0,0,0,0);
+            
+            const diffTime = targetDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            const dDayBadge = document.getElementById('dDayBadge');
+            if (diffDays > 0) {
+                dDayBadge.innerText = "D-" + diffDays;
+                dDayBadge.className = "bg-indigo-600 text-white font-black px-2 py-0.5 rounded-md text-[11px] shadow-xs";
+            } else if (diffDays === 0) {
+                dDayBadge.innerText = "D-Day 🎉";
+                dDayBadge.className = "bg-emerald-600 text-white font-black px-2 py-0.5 rounded-md text-[11px] shadow-xs animate-pulse";
+            } else {
+                dDayBadge.innerText = "상환 기한 종료";
+                dDayBadge.className = "bg-rose-600 text-white font-black px-2 py-0.5 rounded-md text-[11px] shadow-xs";
+            }
+        }
 
         function setupImageCompression() {
             document.getElementById('imageInput').addEventListener('change', function(e) {
@@ -253,12 +289,12 @@
                 const data = snapshot.val();
                 if (data) {
                     initialDebt = data.initialDebt !== undefined ? data.initialDebt : 50000000;
-                    startDate = data.startDate || "2026-01-01";
+                    startDate = data.startDate || "2026-05-01";
                     const rawHistory = data.history || [];
                     history = Array.isArray(rawHistory) ? rawHistory : Object.values(rawHistory);
                 } else {
                     initialDebt = 50000000;
-                    startDate = "2026-01-01";
+                    startDate = "2026-05-01";
                     history = [];
                 }
                 document.getElementById('startDateInput').value = startDate;
@@ -268,8 +304,7 @@
             });
         } else {
             initialDebt = localStorage.getItem('premium_debt_initial_amt') ? parseInt(localStorage.getItem('premium_debt_initial_amt')) : 50000000;
-            balance = localStorage.getItem('premium_debt_balance') ? parseInt(localStorage.getItem('premium_debt_balance')) : initialDebt;
-            startDate = localStorage.getItem('premium_debt_start_date') || "2026-01-01";
+            startDate = localStorage.getItem('premium_debt_start_date') || "2026-05-01";
             const rawLocalStorage = localStorage.getItem('premium_debt_history');
             let parsedHistory = rawLocalStorage ? JSON.parse(rawLocalStorage) : [];
             history = Array.isArray(parsedHistory) ? parsedHistory : Object.values(parsedHistory);
@@ -317,11 +352,13 @@
             });
         }
 
+        // ⭐ 금융 정산 시뮬레이터 전면 수정: 법적 정석인 상환금 발생 시 [누적 이자 먼저 차감 후 원금 삭감] 알고리즘 독립 연산 매핑
         function recalculateBalances() {
             if (!Array.isArray(history)) history = [];
             let chronologicalHistory = [...history].sort((a, b) => a.date.localeCompare(b.date) || (a.id || 0) - (b.id || 0));
             
-            let currentBalance = initialDebt;
+            let currentPrincipal = initialDebt;
+            let currentInterestPool = 0;
             let currentTimelineDate = startDate;
             accumulatedTotalPrincipalToRepay = initialDebt; 
 
@@ -332,20 +369,38 @@
                     daysPassed = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 }
                 
-                let periodInterest = Math.round(currentBalance * 0.03 * (daysPassed / 365));
+                // 직전 기점 원금에 대한 일할 이자 가산
+                let periodInterest = Math.round(currentPrincipal * 0.03 * (daysPassed / 365));
                 if (periodInterest < 0) periodInterest = 0;
-                item.accruedInterest = periodInterest;
+                currentInterestPool += periodInterest;
                 
                 if (item.category === '부채 추가 (증액)') {
-                    currentBalance = currentBalance + periodInterest + (item.amount || 0);
-                    accumulatedTotalPrincipalToRepay += (item.amount || 0); 
+                    currentPrincipal += (item.amount || 0);
+                    accumulatedTotalPrincipalToRepay += (item.amount || 0);
+                    item.paidInterest = 0;
+                    item.paidPrincipal = 0;
                 } else {
-                    currentBalance = currentBalance + periodInterest - (item.amount || 0);
+                    let amountToPay = item.amount || 0;
+                    
+                    // 탕감액 배분: 누적 이자 풀에서 먼저 삭감
+                    let interestPaid = Math.min(amountToPay, currentInterestPool);
+                    currentInterestPool -= interestPaid;
+                    amountToPay -= interestPaid;
+                    
+                    // 남은 금액으로 원금 차감
+                    let principalPaid = Math.min(amountToPay, currentPrincipal);
+                    currentPrincipal -= principalPaid;
+                    
+                    item.paidInterest = interestPaid;
+                    item.paidPrincipal = principalPaid;
                 }
-                item.balance = currentBalance;
+                
+                item.remainingPrincipal = currentPrincipal;
+                item.remainingInterest = currentInterestPool;
                 currentTimelineDate = item.date;
             });
             
+            // 오늘 시점까지의 미정산 실시간 가용 이자 별도 파싱
             let todayStr = new Date().toISOString().split('T')[0];
             let finalDaysPassed = 0;
             if (todayStr > currentTimelineDate) {
@@ -353,12 +408,13 @@
                 finalDaysPassed = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             }
             
-            liveAccruedInterest = Math.round(currentBalance * 0.03 * (finalDaysPassed / 365));
-            if (liveAccruedInterest < 0) liveAccruedInterest = 0;
+            let finalLiveInterest = Math.round(currentPrincipal * 0.03 * (finalDaysPassed / 365));
+            if (finalLiveInterest < 0) finalLiveInterest = 0;
             
-            liveTotalBalance = currentBalance + liveAccruedInterest;
-            principalBalanceWithoutLiveInterest = currentBalance;
-            balance = currentBalance; 
+            // 전역 독립 바인딩 변수에 데이터 배정
+            liveAccruedInterest = currentInterestPool + finalLiveInterest;
+            principalBalanceWithoutLiveInterest = currentPrincipal;
+            balance = currentPrincipal; // 내부 동기화 호환 유지
             
             history = chronologicalHistory.sort((a, b) => b.date.localeCompare(a.date) || (b.id || 0) - (a.id || 0));
         }
@@ -368,14 +424,15 @@
             const principalCleared = totalDebtWeight - principalBalanceWithoutLiveInterest;
             const progressPercent = totalDebtWeight > 0 ? ((principalCleared / totalDebtWeight) * 100).toFixed(1) : 100;
 
-            document.getElementById('balanceDisplay').innerText = liveTotalBalance.toLocaleString() + '원';
-            document.getElementById('principalDisplay').innerText = '원금 잔액: ' + principalBalanceWithoutLiveInterest.toLocaleString() + '원';
-            document.getElementById('interestDisplay').innerText = '실시간 누적 이자: ' + liveAccruedInterest.toLocaleString() + '원';
+            // ⭐ UI 원리금 완벽한 개별화 독립 매핑
+            document.getElementById('principalDisplay').innerText = principalBalanceWithoutLiveInterest.toLocaleString() + '원';
+            document.getElementById('interestDisplay').innerText = liveAccruedInterest.toLocaleString() + '원';
             
-            document.getElementById('totalClearedDisplay').innerText = '총 원금탕감액: ' + (principalCleared > 0 ? principalCleared.toLocaleString() : '0') + '원';
-            document.getElementById('progressPercent').innerText = '원금 상환율: ' + (progressPercent >= 0 ? progressPercent : '0.0') + '%';
+            document.getElementById('totalClearedDisplay').innerText = '총 원금 탕감액: ' + (principalCleared > 0 ? principalCleared.toLocaleString() : '0') + '원';
+            document.getElementById('progressPercent').innerText = '순수 원금 상환율: ' + (progressPercent >= 0 ? progressPercent : '0.0') + '%';
             document.getElementById('progressBar').style.width = (progressPercent >= 0 ? Math.min(progressPercent, 100) : 0) + '%';
 
+            updateDDayCountdown();
             renderHistoryList();
         }
 
@@ -400,8 +457,9 @@
 
             historyList.innerHTML = filteredHistory.map((log) => {
                 let badgeStyle = "bg-slate-100 text-slate-700 border-slate-200";
-                let amtSignColor = "text-red-500 font-extrabold";
-                let prefixSign = "- ";
+                let amtSignColor = "text-slate-700 font-extrabold";
+                let prefixSign = "";
+                let subDetailsLine = "";
 
                 if (log.category === '알바') badgeStyle = "bg-indigo-50 text-indigo-600 border-indigo-100";
                 if (log.category === '용돈 차감') badgeStyle = "bg-amber-50 text-amber-600 border-amber-100";
@@ -414,6 +472,17 @@
                     badgeStyle = "bg-emerald-950 text-emerald-400 border-emerald-800";
                     amtSignColor = "text-emerald-500 font-black";
                     prefixSign = "+ ";
+                    subDetailsLine = `<p class="text-[11px] text-slate-400 font-medium">원금 증액 후 원금 잔고: ${log.remainingPrincipal.toLocaleString()}원</p>`;
+                } else {
+                    amtSignColor = "text-red-500 font-extrabold";
+                    prefixSign = "- ";
+                    // ⭐ 탕감 시 이자와 원금이 각각 어떻게 분할 정산되었는지 영수증 형태로 출력
+                    subDetailsLine = `
+                        <div class="text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-100 p-1.5 rounded mt-1 space-y-0.5 w-fit">
+                            <p class="text-indigo-600">📉 원금 차감분: -${(log.paidPrincipal || 0).toLocaleString()}원 (남은 원금: ${log.remainingPrincipal.toLocaleString()}원)</p>
+                            <p class="text-amber-600">🔸 누적이자 차감분: -${(log.paidInterest || 0).toLocaleString()}원 (남은 이자: ${log.remainingInterest.toLocaleString()}원)</p>
+                        </div>
+                    `;
                 }
 
                 const imgElement = log.image ? `
@@ -422,11 +491,6 @@
                     </div>
                 ` : "";
 
-                const interestNoticeLine = (log.accruedInterest && log.accruedInterest > 0) ? `
-                    <p class="text-[11px] text-amber-600 font-semibold mt-1 bg-amber-50 border border-amber-100 rounded px-2 py-0.5 w-fit">📈 이 기간 동안 축적된 이자: +${log.accruedInterest.toLocaleString()}원</p>
-                ` : "";
-
-                // ⭐ [오타 수정 완료] ${amtSignColor}와 ${prefixSign}이 오작동하던 부분을 완벽하게 격리 패치하여 히스토리가 상시 노출됩니다.
                 return `
                     <div class="bg-white border border-slate-100 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center transition hover:shadow-md hover:border-slate-200/60 duration-200 gap-4">
                         <div class="space-y-1 w-full md:w-3/4">
@@ -441,15 +505,14 @@
                                ondblclick="editDescriptionDirect(${log.id})" title="더블클릭하여 메모 바로 수정">
                                 ${log.description || '상세 내역 없음 (더블클릭하여 입력)'}
                             </p>
-                            ${interestNoticeLine}
+                            ${subDetailsLine}
                             ${imgElement}
                         </div>
                         <div class="text-right w-full md:w-1/4 flex justify-between md:justify-end items-center md:items-end md:flex-row md:flex-col gap-3 md:gap-1">
-                            <span class="md:hidden text-xs text-slate-400">금액/원리금잔액</span>
+                            <span class="md:hidden text-xs text-slate-400">정산액</span>
                             <div class="flex items-center md:items-end gap-3 md:flex-col">
                                 <div class="text-right">
                                     <p class="text-base ${amtSignColor}">${prefixSign}${(log.amount || 0).toLocaleString()}원</p>
-                                    <p class="text-[11px] font-medium text-slate-400">잔액: ${(log.balance || 0).toLocaleString()}원</p>
                                 </div>
                                 <button onclick="deleteLogDirect(${log.id})" class="text-xs bg-red-50 hover:bg-red-100 text-red-500 rounded-lg px-2 py-1 transition font-bold cursor-pointer" title="이 내역 취소">삭제</button>
                             </div>
@@ -465,10 +528,16 @@
             if (itemIndex === -1) return;
 
             const targetItem = history[itemIndex];
-            const msg = `⚠️ 선택하신 내역을 취소(삭제)하시겠습니까?\n\n` +
-                        `• 날짜: ${targetItem.date}\n` +
-                        `• 항목: [${targetItem.category}] ${targetItem.description || ''}\n` +
-                        `• 금액: ${targetItem.amount.toLocaleString()}원\n\n` +
+            const msg = `⚠️ 선택하신 내역을 취소(삭제)하시겠습니까?
+
+` +
+                        `• 날짜: ${targetItem.date}
+` +
+                        `• 항목: [${targetItem.category}] ${targetItem.description || ''}
+` +
+                        `• 금액: ${targetItem.amount.toLocaleString()}원
+
+` +
                         `※ 취소 즉시 정산 타임라인과 이자 균형이 과거 시점으로 역추적 복구 계산됩니다.`;
 
             if (confirm(msg)) {
@@ -593,7 +662,6 @@
             syncData();
 
             clearInputs(amountInput, descriptionInput);
-            checkCompletion(liveTotalBalance);
         }
 
         function clearInputs(amt, desc) {
@@ -607,19 +675,13 @@
             toggleButtonText("알바");
         }
 
-        function checkCompletion(bal) {
-            if (bal <= 0) {
-                alert('🎊 대단합니다! 원금과 연 3% 약정 이자를 포함한 모든 부채 상환 및 탕감이 최종 완료되었습니다! 고생하셨습니다. 🎊');
-            }
-        }
-
         function resetData() {
             if (confirm('⚠️ 경고: 모든 기록(사진 포함)과 이자가 초기화되고 설정된 최초 원금으로 리셋됩니다. 진행할까요?')) {
                 if (isFirebaseActive) {
                     database.ref('debt_project').set({
                         balance: initialDebt,
                         history: [],
-                        startDate: "2026-01-01",
+                        startDate: "2026-05-01",
                         initialDebt: initialDebt
                     });
                 } else {
@@ -628,7 +690,7 @@
                     localStorage.removeItem('premium_debt_start_date');
                     balance = initialDebt;
                     history = [];
-                    startDate = "2026-01-01";
+                    startDate = "2026-05-01";
                     recalculateBalances();
                     updateUI();
                 }
@@ -640,13 +702,15 @@
                 alert('내보낼 데이터가 없습니다.');
                 return;
             }
-            let csvContent = "\uFEFF"; 
-            csvContent += "날짜,분류,금액(탕감/증액),누적이자발생,남은원리금잔액,상세내용\n";
+            let csvContent = "﻿"; 
+            csvContent += "날짜,분류,금액,남은원금잔액,남은이자잔액,상세내용
+";
 
             history.forEach(log => {
                 if (log) {
                     const prefix = log.category === '부채 추가 (증액)' ? '+' : '-';
-                    csvContent += '"' + (log.date || '') + '","' + (log.category || '') + '","' + prefix + (log.amount || 0) + '",' + (log.accruedInterest || 0) + ',' + (log.balance || 0) + ',"' + (log.description || '') + '"\n';
+                    csvContent += '"' + (log.date || '') + '","' + (log.category || '') + '","' + prefix + (log.amount || 0) + '",' + (log.remainingPrincipal || 0) + ',' + (log.remainingInterest || 0) + ',"' + (log.description || '') + '"
+';
                 }
             });
 
@@ -654,7 +718,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.setAttribute("href", url);
-            link.setAttribute("download", `부채탕감_원리금정산판_${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute("download", `부채탕감_원리금독립정산판_${new Date().toISOString().split('T')[0]}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
