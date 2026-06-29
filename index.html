@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>부채 탕감 프로젝트 Dashboard</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
@@ -23,6 +25,7 @@
 <body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between pb-12">
 
     <div class="w-full max-w-2xl mx-auto px-4 pt-6 md:pt-10 flex-grow">
+        <!-- 상단 헤더 카드 -->
         <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden mb-6">
             <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500 rounded-full opacity-10 blur-xl"></div>
             <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-500 rounded-full opacity-10 blur-xl"></div>
@@ -53,6 +56,7 @@
                 </div>
             </div>
 
+            <!-- 대시보드 메인 잔액 -->
             <div class="mt-6 bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10">
                 <div class="grid grid-cols-2 gap-4 divide-x divide-white/10">
                     <div class="text-center pr-2">
@@ -82,6 +86,7 @@
             </div>
         </div>
 
+        <!-- 메인 컨텐츠 -->
         <div class="space-y-6">
             
             <div class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100">
@@ -138,10 +143,12 @@
                 </button>
             </div>
 
+            <!-- 2. 히스토리 리스트 카드 -->
             <div class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100">
-                <div class="flex justify-between items-center mb-4">
+                <!-- ⭐ 버튼들이 좁은 스마트폰에서도 잘리지 않도록 Flex 구조만 수정했습니다 -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
                     <div class="flex items-center gap-2">
-                        <div class="p-2 rounded-xl bg-slate-100 text-slate-600">
+                        <div class="p-2 rounded-xl bg-slate-100 text-slate-600 shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                             </svg>
@@ -151,15 +158,17 @@
                             <p id="editHintText" class="text-[11px] text-slate-500 font-medium">💡 현재 <strong>[🔒보호 잠금 상태]</strong>입니다. 수정/삭제하려면 우측 잠금을 해제하세요.</p>
                         </div>
                     </div>
-                    <div class="flex gap-2">
+                    <!-- 엑셀 버튼 모바일 숨김 해제 완료 -->
+                    <div class="flex flex-wrap justify-end gap-1.5 w-full md:w-auto">
                         <button onclick="toggleLock()" id="lockBtn" class="text-xs font-semibold bg-slate-700 hover:bg-slate-800 text-white rounded-lg px-3 py-1.5 transition cursor-pointer flex items-center gap-1 shadow-sm">
                             🔒 보호 잠금 (안전)
                         </button>
-                        <button onclick="exportToCSV()" class="text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 rounded-lg px-3 py-1.5 transition cursor-pointer hidden md:block">엑셀 다운로드</button>
+                        <button onclick="exportToCSV()" class="text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 rounded-lg px-3 py-1.5 transition cursor-pointer">엑셀 다운로드</button>
                         <button id="resetBtn" onclick="resetData()" class="text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 rounded-lg px-3 py-1.5 transition cursor-pointer hidden">전체 리셋</button>
                     </div>
                 </div>
 
+                <!-- 필터 탭 -->
                 <div class="flex gap-1.5 border-b border-slate-100 pb-3 mb-3 overflow-x-auto">
                     <button onclick="filterHistory('전체')" id="filter-전체" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 text-white transition cursor-pointer whitespace-nowrap">전체</button>
                     <button onclick="filterHistory('알바')" id="filter-알바" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">알바</button>
@@ -171,6 +180,7 @@
                     <button onclick="filterHistory('부채 감소 (감액)')" id="filter-부채감소" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">감액</button>
                 </div>
 
+                <!-- 히스토리 스크롤 영역 -->
                 <div id="historyList" class="space-y-3 max-h-120 overflow-y-auto pr-1">
                     <div class="text-center py-8 text-slate-400 text-sm">내역을 불러오는 중입니다...</div>
                 </div>
@@ -179,6 +189,7 @@
         </div>
     </div>
 
+    <!-- 푸터 가이드 -->
     <div class="max-w-2xl w-full mx-auto px-4 mt-6 text-center text-xs text-slate-400">
         <p>© 부채 탕감 프로젝트 Dashboard · 오픈소스 라이선스</p>
     </div>
@@ -194,7 +205,7 @@
             appId: "1:526281486050:web:e8ed8f28eaa5e9701bb8bb"
         };
 
-        // ⭐ 안전 잠금 모드 변수 선언 (기본값: true 잠금 상태)
+        // 안전 잠금 모드
         let isLocked = true;
 
         let initialDebt = 50000000; 
@@ -217,7 +228,7 @@
             updateDDayCountdown();
         });
 
-        // ⭐ 잠금 토글 컨트롤 기능
+        // 잠금 토글 컨트롤 기능
         function toggleLock() {
             isLocked = !isLocked;
             const lockBtn = document.getElementById('lockBtn');
@@ -238,11 +249,9 @@
                 resetBtn.style.display = 'block';
             }
             
-            // 상단 설정 인풋창 활성/비활성화 처리
             document.getElementById('startDateInput').disabled = isLocked;
             document.getElementById('initialDebtInput').disabled = isLocked;
             
-            // UI 리렌더링으로 삭제버튼 숨김/노출 적용
             renderHistoryList();
         }
 
@@ -536,7 +545,6 @@
                     </div>
                 ` : "";
 
-                // ⭐ 잠금 상태에 따른 UI 렌더링 동적 제어
                 const deleteBtnHtml = isLocked ? '' : `<button onclick="deleteLogDirect(${log.id})" class="text-xs bg-red-50 hover:bg-red-100 text-red-500 rounded-lg px-2 py-1 transition font-bold cursor-pointer" title="이 내역 취소">삭제</button>`;
                 const dblClickCat = isLocked ? '' : `ondblclick="editCategoryDirect(${log.id})" title="더블클릭하여 분류 태그 수정"`;
                 const dblClickDesc = isLocked ? '' : `ondblclick="editDescriptionDirect(${log.id})" title="더블클릭하여 메모 수정"`;
@@ -673,7 +681,6 @@
             renderHistoryList();
         }
 
-        // ⭐ 새로운 입력 반영은 굳이 잠금을 풀지 않아도 자유롭게 가능하게 허용
         function addDeduction() {
             const category = document.getElementById('category').value;
             const amountInput = document.getElementById('amount');
