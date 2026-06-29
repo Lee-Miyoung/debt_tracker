@@ -140,7 +140,7 @@
                         </div>
                         <div>
                             <h3 class="text-lg font-bold text-slate-900">전체 정산 히스토리 내역</h3>
-                            <p class="text-[11px] text-indigo-600 font-medium">💡 분류 태그와 상세 메모를 각각 [더블클릭]하면 수정이 가능하며, 우측 [삭제] 버튼으로 취소가 가능합니다.</p>
+                            <p class="text-[11px] text-indigo-600 font-medium">💡 분류 태그와 상세 메모를 각각 [더블클릭]하면 현장에서 수정 가능합니다.</p>
                         </div>
                     </div>
                     <div class="flex gap-2">
@@ -270,7 +270,6 @@
             }
         }
 
-        // ⭐ 핵심 버그 해결: Firebase에서 불러올 때 발생하는 null(유령 데이터) 완벽 차단 필터 적용
         if (isFirebaseActive) {
             database.ref('debt_project').on('value', (snapshot) => {
                 const data = snapshot.val();
@@ -330,9 +329,9 @@
             history = safeHistory;
         }
 
+        // ⭐ 핵심 변경: 원금 100% 우선 차감 적용으로 이자 증식 억제
         function recalculateBalances() {
             if (!Array.isArray(history)) history = [];
-            // 연산 전 유령 데이터 한 번 더 필터링 (자가 복구 기능)
             let safeHistory = history.filter(item => item && item.date);
             let chronologicalHistory = [...safeHistory].sort((a, b) => a.date.localeCompare(b.date) || (a.id || 0) - (b.id || 0));
             
@@ -360,12 +359,14 @@
                 } else {
                     let amountToPay = item.amount || 0;
                     
-                    let interestPaid = Math.min(amountToPay, currentInterestPool);
-                    currentInterestPool -= interestPaid;
-                    amountToPay -= interestPaid;
-                    
+                    // ⭐ 원금부터 100% 먼저 무자비하게 깎아버립니다! (아들 유리)
                     let principalPaid = Math.min(amountToPay, currentPrincipal);
                     currentPrincipal -= principalPaid;
+                    amountToPay -= principalPaid;
+                    
+                    // 만약 원금을 다 깎고도 돈이 남으면 그때 누적된 이자를 깎습니다.
+                    let interestPaid = Math.min(amountToPay, currentInterestPool);
+                    currentInterestPool -= interestPaid;
                     
                     item.paidInterest = interestPaid;
                     item.paidPrincipal = principalPaid;
@@ -450,10 +451,11 @@
                 } else {
                     amtSignColor = "text-red-500 font-extrabold";
                     prefixSign = "- ";
+                    // ⭐ 텍스트 수정: 이자가 아닌 원금이 무조건 우선 삭감됨을 텍스트 영수증에 명시
                     subDetailsLine = `
                         <div class="text-[11px] font-medium text-slate-500 bg-slate-50 border border-slate-100 p-1.5 rounded mt-1 space-y-0.5 w-fit">
-                            <p class="text-indigo-600">📉 원금 차감분: -${(log.paidPrincipal || 0).toLocaleString()}원 (남은 원금: ${(log.remainingPrincipal || 0).toLocaleString()}원)</p>
-                            <p class="text-amber-600">🔸 누적이자 차감분: -${(log.paidInterest || 0).toLocaleString()}원 (남은 이자: ${(log.remainingInterest || 0).toLocaleString()}원)</p>
+                            <p class="text-indigo-600">📉 원금 우선 삭감: -${(log.paidPrincipal || 0).toLocaleString()}원 (남은 원금: ${(log.remainingPrincipal || 0).toLocaleString()}원)</p>
+                            <p class="text-amber-600">🔸 잔여액 이자 상환: -${(log.paidInterest || 0).toLocaleString()}원 (남은 이자: ${(log.remainingInterest || 0).toLocaleString()}원)</p>
                         </div>
                     `;
                 }
