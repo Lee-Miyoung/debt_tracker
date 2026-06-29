@@ -39,11 +39,11 @@
                     <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-300 mt-4">
                         <div class="flex items-center gap-1 bg-white/10 border border-white/15 rounded-lg px-2 py-1">
                             <span>📅 시작일:</span>
-                            <input type="date" id="startDateInput" onchange="changeStartDate(this.value)" class="bg-transparent text-white focus:outline-none font-bold text-[11px] cursor-pointer">
+                            <input type="date" id="startDateInput" onchange="changeStartDate(this.value)" class="bg-transparent text-white focus:outline-none font-bold text-[11px] cursor-pointer" disabled>
                         </div>
                         <div class="flex items-center gap-1 bg-white/10 border border-white/15 rounded-lg px-2 py-1">
                             <span>💰 최초 원금:</span>
-                            <input type="number" id="initialDebtInput" onchange="changeInitialDebt(this.value)" class="bg-transparent text-white focus:outline-none font-bold text-[11px] w-24 text-right">
+                            <input type="number" id="initialDebtInput" onchange="changeInitialDebt(this.value)" class="bg-transparent text-white focus:outline-none font-bold text-[11px] w-24 text-right" disabled>
                             <span>원</span>
                         </div>
                     </div>
@@ -148,12 +148,15 @@
                         </div>
                         <div>
                             <h3 class="text-lg font-bold text-slate-900">전체 정산 히스토리 내역</h3>
-                            <p class="text-[11px] text-indigo-600 font-medium">💡 분류 태그와 상세 메모를 각각 [더블클릭]하면 목록에서 직접 수정할 수 있습니다.</p>
+                            <p id="editHintText" class="text-[11px] text-slate-500 font-medium">💡 현재 <strong>[🔒보호 잠금 상태]</strong>입니다. 수정/삭제하려면 우측 잠금을 해제하세요.</p>
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="exportToCSV()" class="text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 rounded-lg px-3 py-1.5 transition cursor-pointer">엑셀 다운로드</button>
-                        <button onclick="resetData()" class="text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 rounded-lg px-3 py-1.5 transition cursor-pointer">전체 리셋</button>
+                        <button onclick="toggleLock()" id="lockBtn" class="text-xs font-semibold bg-slate-700 hover:bg-slate-800 text-white rounded-lg px-3 py-1.5 transition cursor-pointer flex items-center gap-1 shadow-sm">
+                            🔒 보호 잠금 (안전)
+                        </button>
+                        <button onclick="exportToCSV()" class="text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 rounded-lg px-3 py-1.5 transition cursor-pointer hidden md:block">엑셀 다운로드</button>
+                        <button id="resetBtn" onclick="resetData()" class="text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 rounded-lg px-3 py-1.5 transition cursor-pointer hidden">전체 리셋</button>
                     </div>
                 </div>
 
@@ -191,6 +194,9 @@
             appId: "1:526281486050:web:e8ed8f28eaa5e9701bb8bb"
         };
 
+        // ⭐ 안전 잠금 모드 변수 선언 (기본값: true 잠금 상태)
+        let isLocked = true;
+
         let initialDebt = 50000000; 
         let balance = initialDebt; 
         let history = [];
@@ -210,6 +216,35 @@
             setupImageCompression();
             updateDDayCountdown();
         });
+
+        // ⭐ 잠금 토글 컨트롤 기능
+        function toggleLock() {
+            isLocked = !isLocked;
+            const lockBtn = document.getElementById('lockBtn');
+            const hintEl = document.getElementById('editHintText');
+            const resetBtn = document.getElementById('resetBtn');
+
+            if (isLocked) {
+                lockBtn.innerHTML = "🔒 보호 잠금 (안전)";
+                lockBtn.className = "text-xs font-semibold bg-slate-700 hover:bg-slate-800 text-white rounded-lg px-3 py-1.5 transition cursor-pointer flex items-center gap-1 shadow-sm";
+                hintEl.innerHTML = `💡 현재 <strong>[🔒보호 잠금 상태]</strong>입니다. 수정/삭제하려면 우측 잠금을 해제하세요.`;
+                hintEl.className = "text-[11px] text-slate-500 font-medium";
+                resetBtn.style.display = 'none';
+            } else {
+                lockBtn.innerHTML = "🔓 잠금 해제 (수정가능)";
+                lockBtn.className = "text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white rounded-lg px-3 py-1.5 transition cursor-pointer flex items-center gap-1 shadow-sm animate-pulse";
+                hintEl.innerHTML = `💡 분류 태그와 상세 메모를 각각 <strong>[더블클릭]</strong>하면 직접 수정할 수 있습니다.`;
+                hintEl.className = "text-[11px] text-indigo-600 font-medium";
+                resetBtn.style.display = 'block';
+            }
+            
+            // 상단 설정 인풋창 활성/비활성화 처리
+            document.getElementById('startDateInput').disabled = isLocked;
+            document.getElementById('initialDebtInput').disabled = isLocked;
+            
+            // UI 리렌더링으로 삭제버튼 숨김/노출 적용
+            renderHistoryList();
+        }
 
         function updateDDayCountdown() {
             const targetDate = new Date('2031-05-01');
@@ -312,6 +347,7 @@
         }
 
         function changeStartDate(val) {
+            if(isLocked) return;
             if (!val) return;
             startDate = val;
             recalculateBalances();
@@ -319,6 +355,7 @@
         }
 
         function changeInitialDebt(val) {
+            if(isLocked) return;
             const num = parseInt(val);
             if (isNaN(num) || num < 0) {
                 alert('올바른 금액을 숫자로 입력해주세요.');
@@ -329,7 +366,6 @@
             syncData();
         }
 
-        // ⭐ UI 동적 라벨 변경 (감액 추가)
         function toggleButtonText(val) {
             const label = document.getElementById('amountLabel');
             const btnText = document.getElementById('submitBtnText');
@@ -354,7 +390,6 @@
             history = safeHistory;
         }
 
-        // ⭐ 감액 기능 추가 및 원금 100% 우선 차감 로직
         function recalculateBalances() {
             if (!Array.isArray(history)) history = [];
             let safeHistory = history.filter(item => item && item.date);
@@ -382,7 +417,6 @@
                     item.paidInterest = 0;
                     item.paidPrincipal = 0;
                 } else if (item.category === '부채 감소 (감액)') {
-                    // 감액은 상환이 아니라 권한으로 원금과 전체 목표액 자체를 깎아버리는 로직
                     let reduction = Math.min((item.amount || 0), currentPrincipal);
                     currentPrincipal -= reduction;
                     accumulatedTotalPrincipalToRepay -= reduction;
@@ -392,7 +426,6 @@
                 } else {
                     let amountToPay = item.amount || 0;
                     
-                    // 상환 시 무조건 원금부터 100% 깎습니다.
                     let principalPaid = Math.min(amountToPay, currentPrincipal);
                     currentPrincipal -= principalPaid;
                     amountToPay -= principalPaid;
@@ -476,7 +509,6 @@
                 if (log.category === '배송') badgeStyle = "bg-purple-50 text-purple-600 border-purple-100";
                 if (log.category === '자재상하차') badgeStyle = "bg-rose-50 text-rose-600 border-rose-100";
                 
-                // ⭐ 리스트 내 증액/감액 디자인 동적 처리
                 if (log.category === '부채 추가 (증액)') {
                     badgeStyle = "bg-emerald-950 text-emerald-400 border-emerald-800";
                     amtSignColor = "text-emerald-500 font-black";
@@ -504,18 +536,23 @@
                     </div>
                 ` : "";
 
+                // ⭐ 잠금 상태에 따른 UI 렌더링 동적 제어
+                const deleteBtnHtml = isLocked ? '' : `<button onclick="deleteLogDirect(${log.id})" class="text-xs bg-red-50 hover:bg-red-100 text-red-500 rounded-lg px-2 py-1 transition font-bold cursor-pointer" title="이 내역 취소">삭제</button>`;
+                const dblClickCat = isLocked ? '' : `ondblclick="editCategoryDirect(${log.id})" title="더블클릭하여 분류 태그 수정"`;
+                const dblClickDesc = isLocked ? '' : `ondblclick="editDescriptionDirect(${log.id})" title="더블클릭하여 메모 수정"`;
+                const titleCursorClass = isLocked ? '' : 'cursor-pointer';
+                const descCursorClass = isLocked ? 'p-1' : 'cursor-edit hover:bg-slate-50 p-1 rounded transition border border-transparent hover:border-dashed hover:border-slate-300';
+
                 return `
                     <div class="bg-white border border-slate-100 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center transition hover:shadow-md hover:border-slate-200/60 duration-200 gap-4">
                         <div class="space-y-1 w-full md:w-3/4">
                             <div class="flex items-center gap-2">
-                                <span class="text-xs font-bold border px-2 py-0.5 rounded-md ${badgeStyle} cursor-pointer select-none"
-                                      ondblclick="editCategoryDirect(${log.id})" title="더블클릭하여 분류 태그 직접 수정">
+                                <span class="text-xs font-bold border px-2 py-0.5 rounded-md ${badgeStyle} ${titleCursorClass} select-none" ${dblClickCat}>
                                     ${log.category}
                                 </span>
                                 <span class="text-[11px] text-slate-400 font-medium">${log.date}</span>
                             </div>
-                            <p class="text-sm font-semibold text-slate-700 mt-1 cursor-edit hover:bg-slate-50 p-1 rounded transition border border-transparent hover:border-dashed hover:border-slate-300 select-none" 
-                               ondblclick="editDescriptionDirect(${log.id})" title="더블클릭하여 메모 바로 수정">
+                            <p class="text-sm font-semibold text-slate-700 mt-1 select-none ${descCursorClass}" ${dblClickDesc}>
                                 ${log.description || '상세 내역 없음 (더블클릭하여 입력)'}
                             </p>
                             ${subDetailsLine}
@@ -527,7 +564,7 @@
                                 <div class="text-right">
                                     <p class="text-base ${amtSignColor}">${prefixSign}${(log.amount || 0).toLocaleString()}원</p>
                                 </div>
-                                <button onclick="deleteLogDirect(${log.id})" class="text-xs bg-red-50 hover:bg-red-100 text-red-500 rounded-lg px-2 py-1 transition font-bold cursor-pointer" title="이 내역 취소">삭제</button>
+                                ${deleteBtnHtml}
                             </div>
                         </div>
                     </div>
@@ -536,6 +573,7 @@
         }
 
         function deleteLogDirect(id) {
+            if(isLocked) return;
             if (!Array.isArray(history)) return;
             const itemIndex = history.findIndex(log => log.id === id);
             if (itemIndex === -1) return;
@@ -576,6 +614,7 @@
         }
 
         function editCategoryDirect(id) {
+            if(isLocked) return;
             if (!Array.isArray(history)) return;
             const item = history.find(log => log.id === id);
             if (!item) return;
@@ -589,6 +628,7 @@
         }
 
         function editDescriptionDirect(id) {
+            if(isLocked) return;
             if (!Array.isArray(history)) return;
             const item = history.find(log => log.id === id);
             if (!item) return;
@@ -633,6 +673,7 @@
             renderHistoryList();
         }
 
+        // ⭐ 새로운 입력 반영은 굳이 잠금을 풀지 않아도 자유롭게 가능하게 허용
         function addDeduction() {
             const category = document.getElementById('category').value;
             const amountInput = document.getElementById('amount');
@@ -684,6 +725,7 @@
         }
 
         function resetData() {
+            if(isLocked) return;
             if (confirm('⚠️ 경고: 모든 기록이 초기화되고 설정된 최초 원금으로 리셋됩니다. 진행할까요?')) {
                 if (isFirebaseActive) {
                     database.ref('debt_project').set({
