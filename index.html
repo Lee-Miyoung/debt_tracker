@@ -8,7 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght=300;400;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
         body {
             font-family: 'Noto Sans KR', sans-serif;
             background-color: #f8fafc;
@@ -29,26 +29,44 @@
             
             <div class="flex justify-between items-start">
                 <div>
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 backdrop-blur-xs mb-3">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 backdrop-blur-xs mb-1">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                        실시간 공유 플랫폼 가동 중
+                        실시간 부채 조정 및 연 3% 이자 동기화 플랫폼
                     </span>
                     <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white">부채 탕감 프로젝트</h1>
                     <p class="text-slate-400 text-xs md:text-sm mt-1 font-light">청인마루 현장 데이터 기록 및 실시간 관리 대시보드</p>
+                    
+                    <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-300 mt-4">
+                        <div class="flex items-center gap-1 bg-white/10 border border-white/15 rounded-lg px-2 py-1">
+                            <span>📅 차용 시작일:</span>
+                            <input type="date" id="startDateInput" onchange="changeStartDate(this.value)" class="bg-transparent text-white focus:outline-none font-bold text-[11px] cursor-pointer">
+                        </div>
+                        <div class="flex items-center gap-1 bg-white/10 border border-white/15 rounded-lg px-2 py-1">
+                            <span>💰 최초 원금:</span>
+                            <input type="number" id="initialDebtInput" onchange="changeInitialDebt(this.value)" class="bg-transparent text-white focus:outline-none font-bold text-[11px] w-20 text-right">
+                            <span>원</span>
+                        </div>
+                    </div>
                 </div>
                 <div id="storageBadge" class="text-xs px-2.5 py-1 rounded-md font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
                     연결 중...
                 </div>
             </div>
 
-            <div class="mt-8 text-center bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10">
-                <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">남은 부채 총액</p>
+            <div class="mt-6 text-center bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10">
+                <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">총 남은 부채 (원금 + 이자 총액)</p>
                 <h2 id="balanceDisplay" class="text-3xl md:text-4xl font-black text-white mt-1 tracking-tight">로딩 중...</h2>
+                
+                <div class="flex justify-center gap-4 text-xs mt-2 text-slate-300 font-medium">
+                    <span id="principalDisplay">원금 잔액: -원</span>
+                    <span class="text-white/20">|</span>
+                    <span id="interestDisplay">실시간 누적 이자: -원</span>
+                </div>
                 
                 <div class="mt-5">
                     <div class="flex justify-between text-xs font-semibold text-slate-400 mb-1.5">
                         <span id="progressPercent">상환율: 0%</span>
-                        <span id="totalClearedDisplay">총 탕감액: 0원</span>
+                        <span id="totalClearedDisplay">총 원금탕감액: 0원</span>
                     </div>
                     <div class="w-full bg-slate-800 rounded-full h-3 overflow-hidden p-0.5 border border-slate-700">
                         <div id="progressBar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
@@ -67,15 +85,15 @@
                         </svg>
                     </div>
                     <div>
-                        <h3 class="text-lg font-bold text-slate-900">새로운 탕감 내역 등록</h3>
-                        <p class="text-[11px] text-indigo-600 font-medium">💡 탕감 항목 선택 박스를 [더블클릭]하면 목록에 없는 항목을 직접 입력할 수 있습니다!</p>
+                        <h3 class="text-lg font-bold text-slate-900">새로운 내역 등록 (탕감 / 부채 추가)</h3>
+                        <p class="text-[11px] text-indigo-600 font-medium">💡 새로운 빚이 추가되었을 때는 [부채 추가 (증액)] 항목을 선택해 등록하시면 됩니다.</p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">탕감 항목 (분류)</label>
-                        <select id="category" ondblclick="addCustomCategoryDirectly()" title="더블클릭하여 맞춤 항목 직접 입력" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">항목 분류</label>
+                        <select id="category" onchange="toggleButtonText(this.value)" ondblclick="addCustomCategoryDirectly()" title="더블클릭하여 맞춤 항목 직접 입력" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium">
                             <option value="알바">알바비 정산</option>
                             <option value="용돈 차감">이번 달 용돈 차감</option>
                             <option value="특별 탕감">특별 상환 / 격려 상환</option>
@@ -83,14 +101,15 @@
                             <option value="배송">배송</option>
                             <option value="자재상하차">자재상하차</option>
                             <option value="기타">기타</option>
+                            <option value="부채 추가 (증액)" class="text-emerald-600 font-bold">➕ 부채 추가 (증액)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">탕감 날짜</label>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">날짜 선택</label>
                         <input type="date" id="dateInput" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-900">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">탕감 금액 (원)</label>
+                        <label id="amountLabel" class="block text-xs font-semibold text-slate-500 mb-1">탕감 금액 (원)</label>
                         <input type="number" id="amount" placeholder="예: 350000" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-bold text-slate-900">
                     </div>
                     <div class="md:col-span-3">
@@ -98,17 +117,16 @@
                         <input type="text" id="description" placeholder="예: [청인마루 송도점] 거실 마루 시공 지원 알바비 정산" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
                     </div>
                     <div class="md:col-span-3">
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">청인마루 현장 사진 등록</label>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">청인마루 현장 사진 및 관련 영수증 등록</label>
                         <input type="file" id="imageInput" accept="image/*" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-all">
-                        <p class="text-[11px] text-slate-400 mt-1">※ 현장 시공 완료 사진이나 명세서 이미지를 선택해 주세요. (자동 압축 적용)</p>
                     </div>
                 </div>
 
-                <button onclick="addDeduction()" class="w-full mt-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md shadow-indigo-600/10 transition duration-200 active:scale-[0.99] cursor-pointer flex justify-center items-center gap-2">
+                <button onclick="addDeduction()" id="submitBtn" class="w-full mt-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md shadow-indigo-600/10 transition duration-200 active:scale-[0.99] cursor-pointer flex justify-center items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    탕감 내역 반영하기
+                    <span id="submitBtnText">탕감 내역 반영하기</span>
                 </button>
             </div>
 
@@ -121,7 +139,7 @@
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-lg font-bold text-slate-900">탕감 히스토리 내역</h3>
+                            <h3 class="text-lg font-bold text-slate-900">전체 정산 히스토리 내역</h3>
                             <p class="text-[11px] text-indigo-600 font-medium">💡 분류 태그와 상세 메모를 각각 [더블클릭]하면 수정이 가능하며, 우측 [삭제] 버튼으로 취소가 가능합니다.</p>
                         </div>
                     </div>
@@ -139,6 +157,7 @@
                     <button onclick="filterHistory('현장사진')" id="filter-현장사진" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">현장사진</button>
                     <button onclick="filterHistory('배송')" id="filter-배송" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">배송</button>
                     <button onclick="filterHistory('자재상하차')" id="filter-자재상하차" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">자재상하차</button>
+                    <button onclick="filterHistory('부채 추가 (증액)')" id="filter-부채추가" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">부채 추가</button>
                 </div>
 
                 <div id="historyList" class="space-y-3 max-h-120 overflow-y-auto pr-1">
@@ -154,7 +173,6 @@
     </div>
 
     <script>
-        // 🌟 제출해주신 파이어베이스 정보 및 기지국 연동 주소를 100% 매칭하여 주입 완료했습니다.
         const firebaseConfig = {
             apiKey: "AIzaSyALXHXpvuhIhXZhBRxPQHnXyRoQmFjhHGk",
             authDomain: "debt-tracker-33c16.firebaseapp.com",
@@ -165,13 +183,19 @@
             appId: "1:526281486050:web:e8ed8f28eaa5e9701bb8bb"
         };
 
-        const INITIAL_DEBT = 50000000;
-        let balance = INITIAL_DEBT;
+        let initialDebt = 50000000; 
+        let balance = initialDebt; 
         let history = [];
+        let startDate = "2026-01-01"; 
         let currentFilter = '전체';
         let isFirebaseActive = false;
         let database = null;
         let compressedImageBase64 = "";
+
+        let liveAccruedInterest = 0;
+        let liveTotalBalance = initialDebt;
+        let principalBalanceWithoutLiveInterest = initialDebt;
+        let accumulatedTotalPrincipalToRepay = initialDebt; 
 
         window.addEventListener('DOMContentLoaded', () => {
             const todayStr = new Date().toISOString().split('T')[0];
@@ -228,23 +252,61 @@
             database.ref('debt_project').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    balance = data.balance !== undefined ? data.balance : INITIAL_DEBT;
+                    initialDebt = data.initialDebt !== undefined ? data.initialDebt : 50000000;
+                    startDate = data.startDate || "2026-01-01";
                     const rawHistory = data.history || [];
                     history = Array.isArray(rawHistory) ? rawHistory : Object.values(rawHistory);
                 } else {
-                    balance = INITIAL_DEBT;
+                    initialDebt = 50000000;
+                    startDate = "2026-01-01";
                     history = [];
                 }
-                sortHistoryData();
+                document.getElementById('startDateInput').value = startDate;
+                document.getElementById('initialDebtInput').value = initialDebt;
+                recalculateBalances();
                 updateUI();
             });
         } else {
-            balance = localStorage.getItem('premium_debt_balance') ? parseInt(localStorage.getItem('premium_debt_balance')) : INITIAL_DEBT;
+            initialDebt = localStorage.getItem('premium_debt_initial_amt') ? parseInt(localStorage.getItem('premium_debt_initial_amt')) : 50000000;
+            balance = localStorage.getItem('premium_debt_balance') ? parseInt(localStorage.getItem('premium_debt_balance')) : initialDebt;
+            startDate = localStorage.getItem('premium_debt_start_date') || "2026-01-01";
             const rawLocalStorage = localStorage.getItem('premium_debt_history');
             let parsedHistory = rawLocalStorage ? JSON.parse(rawLocalStorage) : [];
             history = Array.isArray(parsedHistory) ? parsedHistory : Object.values(parsedHistory);
-            sortHistoryData();
+            document.getElementById('startDateInput').value = startDate;
+            document.getElementById('initialDebtInput').value = initialDebt;
+            recalculateBalances();
             setTimeout(updateUI, 100);
+        }
+
+        function changeStartDate(val) {
+            if (!val) return;
+            startDate = val;
+            recalculateBalances();
+            syncData();
+        }
+
+        function changeInitialDebt(val) {
+            const num = parseInt(val);
+            if (isNaN(num) || num < 0) {
+                alert('올바른 금액을 숫자로 입력해주세요.');
+                return;
+            }
+            initialDebt = num;
+            recalculateBalances();
+            syncData();
+        }
+
+        function toggleButtonText(val) {
+            const label = document.getElementById('amountLabel');
+            const btnText = document.getElementById('submitBtnText');
+            if (val === '부채 추가 (증액)') {
+                label.innerText = "추가 증액 금액 (원)";
+                btnText.innerText = "새로운 부채 내역 추가하기";
+            } else {
+                label.innerText = "탕감 금액 (원)";
+                btnText.innerText = "탕감 내역 반영하기";
+            }
         }
 
         function sortHistoryData() {
@@ -257,26 +319,62 @@
 
         function recalculateBalances() {
             if (!Array.isArray(history)) history = [];
-            let tempHistory = [...history].sort((a, b) => (a.id || 0) - (b.id || 0));
-            let currentTempBalance = INITIAL_DEBT;
+            let chronologicalHistory = [...history].sort((a, b) => a.date.localeCompare(b.date) || (a.id || 0) - (b.id || 0));
             
-            tempHistory.forEach(item => {
-                currentTempBalance -= (item.amount || 0);
-                item.balance = currentTempBalance;
+            let currentBalance = initialDebt;
+            let currentTimelineDate = startDate;
+            accumulatedTotalPrincipalToRepay = initialDebt; 
+
+            chronologicalHistory.forEach(item => {
+                let daysPassed = 0;
+                if (item.date > currentTimelineDate) {
+                    const diffTime = Math.abs(new Date(item.date) - new Date(currentTimelineDate));
+                    daysPassed = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                }
+                
+                let periodInterest = Math.round(currentBalance * 0.03 * (daysPassed / 365));
+                if (periodInterest < 0) periodInterest = 0;
+                item.accruedInterest = periodInterest;
+                
+                if (item.category === '부채 추가 (증액)') {
+                    currentBalance = currentBalance + periodInterest + (item.amount || 0);
+                    accumulatedTotalPrincipalToRepay += (item.amount || 0); 
+                } else {
+                    currentBalance = currentBalance + periodInterest - (item.amount || 0);
+                }
+                item.balance = currentBalance;
+                currentTimelineDate = item.date;
             });
             
-            balance = currentTempBalance;
-            sortHistoryData();
+            let todayStr = new Date().toISOString().split('T')[0];
+            let finalDaysPassed = 0;
+            if (todayStr > currentTimelineDate) {
+                const diffTime = Math.abs(new Date(todayStr) - new Date(currentTimelineDate));
+                finalDaysPassed = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            }
+            
+            liveAccruedInterest = Math.round(currentBalance * 0.03 * (finalDaysPassed / 365));
+            if (liveAccruedInterest < 0) liveAccruedInterest = 0;
+            
+            liveTotalBalance = currentBalance + liveAccruedInterest;
+            principalBalanceWithoutLiveInterest = currentBalance;
+            balance = currentBalance; 
+            
+            history = chronologicalHistory.sort((a, b) => b.date.localeCompare(a.date) || (b.id || 0) - (a.id || 0));
         }
 
         function updateUI() {
-            const totalCleared = INITIAL_DEBT - balance;
-            const progressPercent = INITIAL_DEBT > 0 ? ((totalCleared / INITIAL_DEBT) * 100).toFixed(1) : 100;
+            const totalDebtWeight = accumulatedTotalPrincipalToRepay;
+            const principalCleared = totalDebtWeight - principalBalanceWithoutLiveInterest;
+            const progressPercent = totalDebtWeight > 0 ? ((principalCleared / totalDebtWeight) * 100).toFixed(1) : 100;
 
-            document.getElementById('balanceDisplay').innerText = balance.toLocaleString() + '원';
-            document.getElementById('totalClearedDisplay').innerText = '총 탕감액: ' + totalCleared.toLocaleString() + '원';
-            document.getElementById('progressPercent').innerText = '상환율: ' + progressPercent + '%';
-            document.getElementById('progressBar').style.width = progressPercent + '%';
+            document.getElementById('balanceDisplay').innerText = liveTotalBalance.toLocaleString() + '원';
+            document.getElementById('principalDisplay').innerText = '원금 잔액: ' + principalBalanceWithoutLiveInterest.toLocaleString() + '원';
+            document.getElementById('interestDisplay').innerText = '실시간 누적 이자: ' + liveAccruedInterest.toLocaleString() + '원';
+            
+            document.getElementById('totalClearedDisplay').innerText = '총 원금탕감액: ' + (principalCleared > 0 ? principalCleared.toLocaleString() : '0') + '원';
+            document.getElementById('progressPercent').innerText = '원금 상환율: ' + (progressPercent >= 0 ? progressPercent : '0.0') + '%';
+            document.getElementById('progressBar').style.width = (progressPercent >= 0 ? Math.min(progressPercent, 100) : 0) + '%';
 
             renderHistoryList();
         }
@@ -288,30 +386,44 @@
             const filteredHistory = history.filter(item => {
                 if (!item) return false;
                 if (currentFilter === '전체') return true;
+                if (currentFilter === '부채 추가 (증액)') return item.category === '부채 추가 (증액)';
                 return item.category === currentFilter;
             });
 
             if (filteredHistory.length === 0) {
                 historyList.innerHTML = `
                     <div class="text-center py-12 border-2 border-dashed border-slate-100 rounded-2xl">
-                        <p class="text-slate-400 text-sm font-medium">조건에 맞는 탕감 내역이 존재하지 않습니다.</p>
+                        <p class="text-slate-400 text-sm font-medium">조건에 맞는 내역이 존재하지 않습니다.</p>
                     </div>`;
                 return;
             }
 
             historyList.innerHTML = filteredHistory.map((log) => {
                 let badgeStyle = "bg-slate-100 text-slate-700 border-slate-200";
+                let amtSignColor = "text-red-500 font-extrabold";
+                let prefixSign = "- ";
+
                 if (log.category === '알바') badgeStyle = "bg-indigo-50 text-indigo-600 border-indigo-100";
                 if (log.category === '용돈 차감') badgeStyle = "bg-amber-50 text-amber-600 border-amber-100";
                 if (log.category === '특별 탕감') badgeStyle = "bg-emerald-50 text-emerald-600 border-emerald-100";
                 if (log.category === '현장사진') badgeStyle = "bg-sky-50 text-sky-600 border-sky-100";
                 if (log.category === '배송') badgeStyle = "bg-purple-50 text-purple-600 border-purple-100";
                 if (log.category === '자재상하차') badgeStyle = "bg-rose-50 text-rose-600 border-rose-100";
+                
+                if (log.category === '부채 추가 (증액)') {
+                    badgeStyle = "bg-emerald-950 text-emerald-400 border-emerald-800";
+                    amtSignColor = "text-emerald-500 font-black";
+                    prefixSign = "+ ";
+                }
 
                 const imgElement = log.image ? `
                     <div class="mt-2 text-left">
                         <img src="${log.image}" alt="현장사진" class="max-w-[140px] h-auto rounded-lg shadow-xs border border-slate-200 hover:scale-105 transition-all duration-200 cursor-pointer" onclick="window.open(this.src)">
                     </div>
+                ` : "";
+
+                const interestNoticeLine = (log.accruedInterest && log.accruedInterest > 0) ? `
+                    <p class="text-[11px] text-amber-600 font-semibold mt-1 bg-amber-50 border border-amber-100 rounded px-2 py-0.5 w-fit">📈 이 기간 동안 축적된 이자: +${log.accruedInterest.toLocaleString()}원</p>
                 ` : "";
 
                 return `
@@ -328,16 +440,17 @@
                                ondblclick="editDescriptionDirect(${log.id})" title="더블클릭하여 메모 바로 수정">
                                 ${log.description || '상세 내역 없음 (더블클릭하여 입력)'}
                             </p>
+                            ${interestNoticeLine}
                             ${imgElement}
                         </div>
                         <div class="text-right w-full md:w-1/4 flex justify-between md:justify-end items-center md:items-end md:flex-row md:flex-col gap-3 md:gap-1">
-                            <span class="md:hidden text-xs text-slate-400">탕감액/잔액</span>
+                            <span class="md:hidden text-xs text-slate-400">금액/원리금잔액</span>
                             <div class="flex items-center md:items-end gap-3 md:flex-col">
                                 <div class="text-right">
-                                    <p class="text-base font-extrabold text-red-500">- ${(log.amount || 0).toLocaleString()}원</p>
+                                    <p class="text-base ${amtSignColorPrefixSign}">${(log.amount || 0).toLocaleString()}원</p>
                                     <p class="text-[11px] font-medium text-slate-400">잔액: ${(log.balance || 0).toLocaleString()}원</p>
                                 </div>
-                                <button onclick="deleteLogDirect(${log.id})" class="text-xs bg-red-50 hover:bg-red-100 text-red-500 rounded-lg px-2 py-1 transition font-bold cursor-pointer" title="이 내역 취소 및 금액 원복">삭제</button>
+                                <button onclick="deleteLogDirect(${log.id})" class="text-xs bg-red-50 hover:bg-red-100 text-red-500 rounded-lg px-2 py-1 transition font-bold cursor-pointer" title="이 내역 취소">삭제</button>
                             </div>
                         </div>
                     </div>
@@ -351,11 +464,11 @@
             if (itemIndex === -1) return;
 
             const targetItem = history[itemIndex];
-            const msg = `⚠️ 선택하신 탕감 내역을 전면 취소(삭제)하시겠습니까?\n\n` +
+            const msg = `⚠️ 선택하신 내역을 취소(삭제)하시겠습니까?\n\n` +
                         `• 날짜: ${targetItem.date}\n` +
                         `• 항목: [${targetItem.category}] ${targetItem.description || ''}\n` +
                         `• 금액: ${targetItem.amount.toLocaleString()}원\n\n` +
-                        `※ 취소 즉시 해당 금액이 전체 남은 부채 잔액에 다시 합산되어 원복됩니다.`;
+                        `※ 취소 즉시 정산 타임라인과 이자 균형이 과거 시점으로 역추적 복구 계산됩니다.`;
 
             if (confirm(msg)) {
                 history.splice(itemIndex, 1);
@@ -365,7 +478,7 @@
         }
 
         function addCustomCategoryDirectly() {
-            const customCat = prompt("📋 목록에 없는 새로운 탕감 항목 분류를 직접 입력하세요:");
+            const customCat = prompt("📋 목록에 없는 새로운 항목 분류를 직접 입력하세요:");
             if (!customCat || !customCat.trim()) return;
             
             const select = document.getElementById('category');
@@ -381,7 +494,7 @@
             const newOption = document.createElement('option');
             newOption.value = trimmed;
             newOption.text = trimmed;
-            select.add(newOption, select.options[select.options.length - 1]);
+            select.add(newOption, select.options[select.options.length - 2]); 
             select.value = trimmed;
         }
 
@@ -390,10 +503,11 @@
             const item = history.find(log => log.id === id);
             if (!item) return;
 
-            const updatedCat = prompt("✏️ 이 내역의 탕감 항목 분류명을 직접 입력하여 수정하세요:", item.category);
+            const updatedCat = prompt("✏️ 분류명을 직접 입력하여 수정하세요:", item.category);
             if (updatedCat === null || !updatedCat.trim()) return;
 
             item.category = updatedCat.trim();
+            recalculateBalances();
             syncData();
         }
 
@@ -402,7 +516,7 @@
             const item = history.find(log => log.id === id);
             if (!item) return;
 
-            const updatedText = prompt("✏️ 해당 항목의 상세 메모를 직접 입력하여 수정하세요:", item.description || "");
+            const updatedText = prompt("✏️ 상세 메모를 직접 입력하여 수정하세요:", item.description || "");
             if (updatedText === null) return;
 
             item.description = updatedText.trim();
@@ -413,11 +527,15 @@
             if (isFirebaseActive) {
                 database.ref('debt_project').set({
                     balance: balance,
-                    history: history
+                    history: history,
+                    startDate: startDate,
+                    initialDebt: initialDebt
                 });
             } else {
                 localStorage.setItem('premium_debt_balance', balance);
                 localStorage.setItem('premium_debt_history', JSON.stringify(history));
+                localStorage.setItem('premium_debt_start_date', startDate);
+                localStorage.setItem('premium_debt_initial_amt', initialDebt);
                 updateUI();
             }
         }
@@ -427,7 +545,10 @@
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.className = "filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap";
             });
-            const targetBtn = document.getElementById(`filter-${category}`);
+            
+            let targetId = `filter-${category}`;
+            if (category === '부채 추가 (증액)') targetId = 'filter-부채추가';
+            const targetBtn = document.getElementById(targetId);
             if (targetBtn) {
                 targetBtn.className = "filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 text-white transition cursor-pointer whitespace-nowrap";
             }
@@ -445,54 +566,33 @@
             const selectedDate = dateInput.value;
 
             if (!selectedDate) {
-                alert('탕감 날짜를 선택해주세요.');
+                alert('날짜를 선택해주세요.');
                 return;
             }
 
             if (isNaN(amount) || amount <= 0) {
-                alert('정확한 탕감 금액을 숫자로 입력해주세요.');
+                alert('정확한 금액을 숫자로 입력해주세요.');
                 return;
             }
-
-            if (balance === 0) {
-                alert('이미 잔액이 0원입니다. 탕감 프로젝트가 완료되었습니다! 🎉');
-                return;
-            }
-
-            const actualDeduction = Math.min(amount, balance);
-            const newBalance = balance - actualDeduction;
 
             const record = {
                 id: Date.now(),
                 date: selectedDate,
                 category: category,
-                amount: actualDeduction,
-                balance: newBalance,
+                amount: amount,
+                balance: 0, 
                 description: description,
                 image: compressedImageBase64
             };
 
             if (!Array.isArray(history)) history = [];
-            const updatedHistory = [record, ...history];
-            history = updatedHistory;
+            history.push(record);
             
             recalculateBalances();
+            syncData();
 
-            if (isFirebaseActive) {
-                database.ref('debt_project').set({
-                    balance: balance,
-                    history: history
-                }).then(() => {
-                    clearInputs(amountInput, descriptionInput);
-                    checkCompletion(balance);
-                });
-            } else {
-                localStorage.setItem('premium_debt_balance', balance);
-                localStorage.setItem('premium_debt_history', JSON.stringify(history));
-                clearInputs(amountInput, descriptionInput);
-                updateUI();
-                checkCompletion(balance);
-            }
+            clearInputs(amountInput, descriptionInput);
+            checkCompletion(liveTotalBalance);
         }
 
         function clearInputs(amt, desc) {
@@ -502,26 +602,33 @@
             compressedImageBase64 = "";
             const todayStr = new Date().toISOString().split('T')[0];
             document.getElementById('dateInput').value = todayStr;
+            document.getElementById('category').value = "알바";
+            toggleButtonText("알바");
         }
 
         function checkCompletion(bal) {
-            if (bal === 0) {
-                alert('🎊 대단합니다! 총 5,000만 원의 모든 약정 부채 탕감이 완료되었습니다! 고생하셨습니다. 🎊');
+            if (bal <= 0) {
+                alert('🎊 대단합니다! 원금과 연 3% 약정 이자를 포함한 모든 부채 상환 및 탕감이 최종 완료되었습니다! 고생하셨습니다. 🎊');
             }
         }
 
         function resetData() {
-            if (confirm('⚠️ 경고: 모든 탕감 기록(사진 포함)과 잔액이 완전히 초기화되고 5천만 원으로 설정됩니다. 진행할까요?')) {
+            if (confirm('⚠️ 경고: 모든 기록(사진 포함)과 이자가 초기화되고 설정된 최초 원금으로 리셋됩니다. 진행할까요?')) {
                 if (isFirebaseActive) {
                     database.ref('debt_project').set({
-                        balance: INITIAL_DEBT,
-                        history: []
+                        balance: initialDebt,
+                        history: [],
+                        startDate: "2026-01-01",
+                        initialDebt: initialDebt
                     });
                 } else {
                     localStorage.removeItem('premium_debt_balance');
                     localStorage.removeItem('premium_debt_history');
-                    balance = INITIAL_DEBT;
+                    localStorage.removeItem('premium_debt_start_date');
+                    balance = initialDebt;
                     history = [];
+                    startDate = "2026-01-01";
+                    recalculateBalances();
                     updateUI();
                 }
             }
@@ -533,11 +640,12 @@
                 return;
             }
             let csvContent = "\uFEFF"; 
-            csvContent += "날짜,분류,탕감금액,남은잔액,상세내용\n";
+            csvContent += "날짜,분류,금액(탕감/증액),누적이자발생,남은원리금잔액,상세내용\n";
 
             history.forEach(log => {
                 if (log) {
-                    csvContent += '"' + (log.date || '') + '","' + (log.category || '') + '",' + (log.amount || 0) + ',' + (log.balance || 0) + ',"' + (log.description || '') + '"\n';
+                    const prefix = log.category === '부채 추가 (증액)' ? '+' : '-';
+                    csvContent += '"' + (log.date || '') + '","' + (log.category || '') + '","' + prefix + (log.amount || 0) + '",' + (log.accruedInterest || 0) + ',' + (log.balance || 0) + ',"' + (log.description || '') + '"\n';
                 }
             });
 
@@ -545,7 +653,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.setAttribute("href", url);
-            link.setAttribute("download", `부채탕감내역_${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute("download", `부채탕감_원리금정산판_${new Date().toISOString().split('T')[0]}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -553,3 +661,5 @@
     </script>
 </body>
 </html>
+"""
+}
