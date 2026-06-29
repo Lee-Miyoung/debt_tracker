@@ -164,6 +164,10 @@
     </div>
 
     <script>
+        // =========================================================================
+        // ⚠️ [필수] 아들과 실시간 주소를 공유하려면 아래의 YOUR_... 빈칸들을 
+        // 본인의 실제 Firebase 정보들로 붙여넣어 교체해 주셔야 합니다!
+        // =========================================================================
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_AUTH_DOMAIN",
@@ -233,14 +237,12 @@
             }
         }
 
-        // ⭐ 핵심 수정 단계: 서버에서 가져온 데이터가 배열이 아니더라도 완벽하게 배열로 복구 및 정렬하는 가드레일 코드
         if (isFirebaseActive) {
             database.ref('debt_project').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     balance = data.balance !== undefined ? data.balance : INITIAL_DEBT;
                     const rawHistory = data.history || [];
-                    // 파이어베이스가 Object로 강제 변환한 데이터를 강제로 순수 Array 배열로 복집합니다.
                     history = Array.isArray(rawHistory) ? rawHistory : Object.values(rawHistory);
                 } else {
                     balance = INITIAL_DEBT;
@@ -501,6 +503,7 @@
             }
         }
 
+        // 🌟 [안전 패치 완료] 줄바꿈 기호(\n)를 문자열 합치기 방식으로 안전하게 빌드하여 자바스크립트 폭발 오류를 제거했습니다.
         function exportToCSV() {
             if (!Array.isArray(history) || history.length === 0) {
                 alert('내보낼 데이터가 없습니다.');
@@ -511,7 +514,7 @@
 
             history.forEach(log => {
                 if (log) {
-                    csvContent += `"${log.date || ''}","${log.category || ''}",${log.amount || 0},${log.balance || 0},"${log.description || ''}"\n`;
+                    csvContent += '"' + (log.date || '') + '","' + (log.category || '') + '",' + (log.amount || 0) + ',' + (log.balance || 0) + ',"' + (log.description || '') + '"\n';
                 }
             });
 
