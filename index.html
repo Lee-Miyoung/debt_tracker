@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>부채 탕감 프로젝트 Dashboard</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
@@ -16,25 +14,15 @@
             background-color: #f8fafc;
         }
         /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between pb-12">
 
     <div class="w-full max-w-2xl mx-auto px-4 pt-6 md:pt-10 flex-grow">
-        <!-- 상단 헤더 카드 -->
         <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden mb-6">
             <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500 rounded-full opacity-10 blur-xl"></div>
             <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-500 rounded-full opacity-10 blur-xl"></div>
@@ -46,19 +34,17 @@
                         실시간 공유 플랫폼
                     </span>
                     <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white">부채 탕감 프로젝트</h1>
-                    <p class="text-slate-400 text-xs md:text-sm mt-1 font-light">부모와 아들이 신뢰로 함께 기록하는 투명한 정산판</p>
+                    <p class="text-slate-400 text-xs md:text-sm mt-1 font-light">청인마루 현장 사진 기록 및 실시간 관리 대시보드</p>
                 </div>
                 <div id="storageBadge" class="text-xs px-2.5 py-1 rounded-md font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
                     로컬 모드
                 </div>
             </div>
 
-            <!-- 대시보드 메인 잔액 -->
             <div class="mt-8 text-center bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10">
                 <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">남은 부채 총액</p>
                 <h2 id="balanceDisplay" class="text-3xl md:text-4xl font-black text-white mt-1 tracking-tight">50,000,000원</h2>
                 
-                <!-- 진행률 바 -->
                 <div class="mt-5">
                     <div class="flex justify-between text-xs font-semibold text-slate-400 mb-1.5">
                         <span id="progressPercent">상환율: 0%</span>
@@ -71,10 +57,8 @@
             </div>
         </div>
 
-        <!-- 메인 컨텐츠 2분할 (PC에서는 위아래 배치하되 모바일 가독성 최적화) -->
         <div class="space-y-6">
             
-            <!-- 1. 탕감 등록 카드 -->
             <div class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100">
                 <div class="flex items-center gap-2 mb-4">
                     <div class="p-2 rounded-xl bg-indigo-50 text-indigo-600">
@@ -85,7 +69,7 @@
                     <h3 class="text-lg font-bold text-slate-900">새로운 탕감 내역 등록</h3>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 mb-1">탕감 항목 (분류)</label>
                         <select id="category" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium">
@@ -96,12 +80,21 @@
                         </select>
                     </div>
                     <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">탕감 날짜</label>
+                        <input type="date" id="dateInput" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-900">
+                    </div>
+                    <div>
                         <label class="block text-xs font-semibold text-slate-500 mb-1">탕감 금액 (원)</label>
                         <input type="number" id="amount" placeholder="예: 350000" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-bold text-slate-900">
                     </div>
-                    <div class="md:col-span-2">
+                    <div class="md:col-span-3">
                         <label class="block text-xs font-semibold text-slate-500 mb-1">상세 내용 및 메모</label>
-                        <input type="text" id="description" placeholder="예: 주말 카페 아르바이트 주급 정산분" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+                        <input type="text" id="description" placeholder="예: [청인마루 송도점] 거실 마루 시공 지원 알바비 정산" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">청인마루 현장 사진 등록</label>
+                        <input type="file" id="imageInput" accept="image/*" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-all">
+                        <p class="text-[11px] text-slate-400 mt-1">※ 현장 시공 완료 사진이나 명세서 이미지를 선택해 주세요. (자동 압축 적용)</p>
                     </div>
                 </div>
 
@@ -113,7 +106,6 @@
                 </button>
             </div>
 
-            <!-- 2. 히스토리 리스트 카드 -->
             <div class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100">
                 <div class="flex justify-between items-center mb-4">
                     <div class="flex items-center gap-2">
@@ -122,19 +114,17 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                             </svg>
                         </div>
-                        <h3 class="text-lg font-bold text-slate-900">탕감 히스토리 내역</h3>
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">탕감 히스토리 내역</h3>
+                            <p class="text-[11px] text-indigo-600 font-medium">💡 리스트의 상세 메모 칸을 [더블클릭]하면 실시간 수정이 가능합니다!</p>
+                        </div>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="exportToCSV()" class="text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 rounded-lg px-3 py-1.5 transition cursor-pointer">
-                            엑셀 다운로드
-                        </button>
-                        <button onclick="resetData()" class="text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 rounded-lg px-3 py-1.5 transition cursor-pointer">
-                            전체 리셋
-                        </button>
+                        <button onclick="exportToCSV()" class="text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 rounded-lg px-3 py-1.5 transition cursor-pointer">엑셀 다운로드</button>
+                        <button onclick="resetData()" class="text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 rounded-lg px-3 py-1.5 transition cursor-pointer">전체 리셋</button>
                     </div>
                 </div>
 
-                <!-- 필터 탭 -->
                 <div class="flex gap-1.5 border-b border-slate-100 pb-3 mb-3 overflow-x-auto">
                     <button onclick="filterHistory('전체')" id="filter-전체" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 text-white transition cursor-pointer">전체</button>
                     <button onclick="filterHistory('알바')" id="filter-알바" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer">알바</button>
@@ -142,8 +132,7 @@
                     <button onclick="filterHistory('특별 탕감')" id="filter-특별" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer">특별 탕감</button>
                 </div>
 
-                <!-- 히스토리 스크롤 영역 -->
-                <div id="historyList" class="space-y-3 max-h-96 overflow-y-auto pr-1">
+                <div id="historyList" class="space-y-3 max-h-120 overflow-y-auto pr-1">
                     <div class="text-center py-8 text-slate-400 text-sm">내역을 불러오는 중입니다...</div>
                 </div>
             </div>
@@ -151,16 +140,12 @@
         </div>
     </div>
 
-    <!-- 푸터 가이드 -->
     <div class="max-w-2xl w-full mx-auto px-4 mt-6 text-center text-xs text-slate-400">
         <p>© 부채 탕감 프로젝트 Dashboard · 오픈소스 라이선스</p>
     </div>
 
     <script>
-        // =========================================================================
-        // ⚠️ [필수 설정] 아들과 실시간 공유를 원하시면 아래 정보를 본인의 Firebase 정보로 교체하세요!
-        // 만약 아래 정보를 그대로 두면 자동으로 안전한 '로컬 모드(브라우저 저장)'로 작동합니다.
-        // =========================================================================
+        // ⚠️ [필수 설정] 본인의 Firebase 정보로 교체하세요!
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_AUTH_DOMAIN",
@@ -177,6 +162,50 @@
         let currentFilter = '전체';
         let isFirebaseActive = false;
         let database = null;
+        let compressedImageBase64 = ""; // 압축 처리된 이미지 담는 전역 변수
+
+        // 페이지 가동 시 초기 설정
+        window.addEventListener('DOMContentLoaded', () => {
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('dateInput').value = todayStr;
+            setupImageCompression();
+        });
+
+        // ⭐ 이미지 초경량 고해상도 자동 압축 시스템 (Canvas 기반 기법)
+        function setupImageCompression() {
+            document.getElementById('imageInput').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) {
+                    compressedImageBase64 = "";
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 500; // 용량 최소화를 위해 최대 가로폭 500px 제한
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // JPEG 포맷 65% 압축률 최적화 적용 (가독성은 유지하되 용량은 1/10 토막)
+                        compressedImageBase64 = canvas.toDataURL('image/jpeg', 0.65);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
 
         // Firebase 활성화 여부 검증
         if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
@@ -202,18 +231,21 @@
                     balance = INITIAL_DEBT;
                     history = [];
                 }
+                sortHistoryData();
                 updateUI();
             });
         } else {
-            // 로컬 스토리지 모드 작동
             balance = localStorage.getItem('premium_debt_balance') ? parseInt(localStorage.getItem('premium_debt_balance')) : INITIAL_DEBT;
             history = localStorage.getItem('premium_debt_history') ? JSON.parse(localStorage.getItem('premium_debt_history')) : [];
-            setTimeout(updateUI, 100); // UI 렌더링 지연 방지
+            sortHistoryData();
+            setTimeout(updateUI, 100);
         }
 
-        // UI 대시보드 새로고침
+        function sortHistoryData() {
+            history.sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+        }
+
         function updateUI() {
-            // 잔액 및 총 상환금 계산
             const totalCleared = INITIAL_DEBT - balance;
             const progressPercent = INITIAL_DEBT > 0 ? ((totalCleared / INITIAL_DEBT) * 100).toFixed(1) : 100;
 
@@ -222,7 +254,6 @@
             document.getElementById('progressPercent').innerText = '상환율: ' + progressPercent + '%';
             document.getElementById('progressBar').style.width = progressPercent + '%';
 
-            // 히스토리 필터링 및 렌더링
             renderHistoryList();
         }
 
@@ -244,22 +275,34 @@
                 return;
             }
 
-            historyList.innerHTML = filteredHistory.map((log, index) => {
+            historyList.innerHTML = filteredHistory.map((log) => {
                 let badgeStyle = "bg-slate-100 text-slate-700 border-slate-200";
                 if (log.category === '알바') badgeStyle = "bg-indigo-50 text-indigo-600 border-indigo-100";
                 if (log.category === '용돈 차감') badgeStyle = "bg-amber-50 text-amber-600 border-amber-100";
                 if (log.category === '특별 탕감') badgeStyle = "bg-emerald-50 text-emerald-600 border-emerald-100";
 
+                // 이미지가 있을 경우에만 전용 이미지 태그 생성
+                const imgElement = log.image ? `
+                    <div class="mt-2 text-left">
+                        <img src="${log.image}" alt="현장사진" class="max-w-[140px] h-auto rounded-lg shadow-xs border border-slate-200 hover:scale-105 transition-all duration-200 cursor-pointer" onclick="window.open(this.src)">
+                    </div>
+                ` : "";
+
                 return `
-                    <div class="bg-white border border-slate-100 rounded-xl p-4 flex justify-between items-center transition hover:shadow-md hover:border-slate-200/60 duration-200 group">
-                        <div class="space-y-1">
+                    <div class="bg-white border border-slate-100 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center transition hover:shadow-md hover:border-slate-200/60 duration-200 gap-4">
+                        <div class="space-y-1 w-full md:w-3/4">
                             <div class="flex items-center gap-2">
                                 <span class="text-xs font-bold border px-2 py-0.5 rounded-md ${badgeStyle}">${log.category}</span>
                                 <span class="text-[11px] text-slate-400 font-medium">${log.date}</span>
                             </div>
-                            <p class="text-sm font-semibold text-slate-700 mt-1">${log.description || '상세 내역 없음'}</p>
+                            <p class="text-sm font-semibold text-slate-700 mt-1 cursor-edit hover:bg-slate-50 p-1 rounded transition border border-transparent hover:border-dashed hover:border-slate-300 select-none" 
+                               ondblclick="editDescriptionDirect(${log.id})" title="더블클릭하여 메모 바로 수정">
+                                ${log.description || '상세 내역 없음 (더블클릭하여 입력)'}
+                            </p>
+                            ${imgElement}
                         </div>
-                        <div class="text-right flex items-center gap-4">
+                        <div class="text-right w-full md:w-1/4 flex justify-between md:justify-end items-center md:items-end md:flex-col">
+                            <span class="md:hidden text-xs text-slate-400">탕감액/잔액</span>
                             <div>
                                 <p class="text-base font-extrabold text-red-500">- ${log.amount.toLocaleString()}원</p>
                                 <p class="text-[11px] font-medium text-slate-400">잔액: ${log.balance.toLocaleString()}원</p>
@@ -270,34 +313,56 @@
             }).join('');
         }
 
-        // 필터 변경
+        // ⭐ 신규 기능: 더블클릭 시 현장에서 직접 수정 및 즉각 서버 동기화 함수
+        function editDescriptionDirect(id) {
+            const item = history.find(log => log.id === id);
+            if (!item) return;
+
+            const updatedText = prompt("✏️ 해당 항목의 상세 메모를 직접 입력하여 수정하세요:", item.description || "");
+            if (updatedText === null) return; // 취소 버튼 처리
+
+            item.description = updatedText.trim();
+
+            // 상위 저장소 모드 동기화 처리
+            if (isFirebaseActive) {
+                database.ref('debt_project').set({
+                    balance: balance,
+                    history: history
+                });
+            } else {
+                localStorage.setItem('premium_debt_history', JSON.stringify(history));
+                updateUI();
+            }
+        }
+
         function filterHistory(category) {
             currentFilter = category;
-            
-            // 버튼 디자인 초기화
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.className = "filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer";
             });
-
-            // 선택된 버튼 디자인 활성화
             let targetId = 'filter-전체';
             if (category === '알바') targetId = 'filter-알바';
             if (category === '용돈 차감') targetId = 'filter-용돈';
             if (category === '특별 탕감') targetId = 'filter-특별';
             
             document.getElementById(targetId).className = "filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 text-white transition cursor-pointer";
-            
             renderHistoryList();
         }
 
-        // 탕감 등록 이벤트
         function addDeduction() {
             const category = document.getElementById('category').value;
             const amountInput = document.getElementById('amount');
             const descriptionInput = document.getElementById('description');
+            const dateInput = document.getElementById('dateInput');
             
             const amount = parseInt(amountInput.value);
             const description = descriptionInput.value.trim();
+            const selectedDate = dateInput.value;
+
+            if (!selectedDate) {
+                alert('탕감 날짜를 선택해주세요.');
+                return;
+            }
 
             if (isNaN(amount) || amount <= 0) {
                 alert('정확한 탕감 금액을 숫자로 입력해주세요.');
@@ -311,30 +376,31 @@
 
             const actualDeduction = Math.min(amount, balance);
             const newBalance = balance - actualDeduction;
-            const today = new Date().toISOString().split('T')[0];
 
             const record = {
                 id: Date.now(),
-                date: today,
+                date: selectedDate,
                 category: category,
                 amount: actualDeduction,
                 balance: newBalance,
-                description: description
+                description: description,
+                image: compressedImageBase64 // ⭐ 최적화 압축을 마친 이미지 스트림 주입
             };
 
             const updatedHistory = [record, ...history];
+            history = updatedHistory;
+            sortHistoryData();
 
             if (isFirebaseActive) {
                 database.ref('debt_project').set({
                     balance: newBalance,
-                    history: updatedHistory
+                    history: history
                 }).then(() => {
                     clearInputs(amountInput, descriptionInput);
                     checkCompletion(newBalance);
                 });
             } else {
                 balance = newBalance;
-                history = updatedHistory;
                 localStorage.setItem('premium_debt_balance', balance);
                 localStorage.setItem('premium_debt_history', JSON.stringify(history));
                 clearInputs(amountInput, descriptionInput);
@@ -346,6 +412,10 @@
         function clearInputs(amt, desc) {
             amt.value = '';
             desc.value = '';
+            document.getElementById('imageInput').value = ''; // 이미지 폼 초기화
+            compressedImageBase64 = ""; // 전역 버퍼 클리어
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('dateInput').value = todayStr;
         }
 
         function checkCompletion(bal) {
@@ -354,9 +424,8 @@
             }
         }
 
-        // 데이터 리셋
         function resetData() {
-            if (confirm('⚠️ 경고: 모든 탕감 기록과 잔액이 완전히 초기화되고 5천만 원으로 설정됩니다. 진행할까요?')) {
+            if (confirm('⚠️ 경고: 모든 탕감 기록(사진 포함)과 잔액이 완전히 초기화되고 5천만 원으로 설정됩니다. 진행할까요?')) {
                 if (isFirebaseActive) {
                     database.ref('debt_project').set({
                         balance: INITIAL_DEBT,
@@ -372,14 +441,12 @@
             }
         }
 
-        // CSV 파일 엑셀 내보내기 기능
         function exportToCSV() {
             if (history.length === 0) {
                 alert('내보낼 데이터가 없습니다.');
                 return;
             }
-
-            let csvContent = "\uFEFF"; // UTF-8 BOM 설정 (엑셀 한글 깨짐 방지)
+            let csvContent = "\uFEFF"; 
             csvContent += "날짜,분류,탕감금액,남은잔액,상세내용\n";
 
             history.forEach(log => {
