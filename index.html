@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>부채 탕감 프로젝트 Dashboard</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
@@ -23,6 +25,7 @@
 <body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between pb-12">
 
     <div class="w-full max-w-2xl mx-auto px-4 pt-6 md:pt-10 flex-grow">
+        <!-- 상단 헤더 카드 -->
         <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden mb-6">
             <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500 rounded-full opacity-10 blur-xl"></div>
             <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-500 rounded-full opacity-10 blur-xl"></div>
@@ -34,13 +37,14 @@
                         실시간 공유 플랫폼
                     </span>
                     <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white">부채 탕감 프로젝트</h1>
-                    <p class="text-slate-400 text-xs md:text-sm mt-1 font-light">청인마루 현장 사진 기록 및 실시간 관리 대시보드</p>
+                    <p class="text-slate-400 text-xs md:text-sm mt-1 font-light">청인마루 현장 데이터 기록 및 실시간 관리 대시보드</p>
                 </div>
                 <div id="storageBadge" class="text-xs px-2.5 py-1 rounded-md font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
                     로컬 모드
                 </div>
             </div>
 
+            <!-- 대시보드 메인 잔액 -->
             <div class="mt-8 text-center bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10">
                 <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">남은 부채 총액</p>
                 <h2 id="balanceDisplay" class="text-3xl md:text-4xl font-black text-white mt-1 tracking-tight">50,000,000원</h2>
@@ -57,8 +61,10 @@
             </div>
         </div>
 
+        <!-- 메인 컨텐츠 -->
         <div class="space-y-6">
             
+            <!-- 1. 탕감 등록 카드 -->
             <div class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100">
                 <div class="flex items-center gap-2 mb-4">
                     <div class="p-2 rounded-xl bg-indigo-50 text-indigo-600">
@@ -66,16 +72,24 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <h3 class="text-lg font-bold text-slate-900">새로운 탕감 내역 등록</h3>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">새로운 탕감 내역 등록</h3>
+                        <p class="text-[11px] text-indigo-600 font-medium">💡 탕감 항목 선택 박스를 [더블클릭]하면 목록에 없는 항목을 직접 입력할 수 있습니다!</p>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 mb-1">탕감 항목 (분류)</label>
-                        <select id="category" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium">
+                        <!-- ⭐ 더블클릭 이벤트(ondblclick) 추가 -->
+                        <select id="category" ondblclick="addCustomCategoryDirectly()" title="더블클릭하여 맞춤 항목 직접 입력" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium">
                             <option value="알바">알바비 정산</option>
                             <option value="용돈 차감">이번 달 용돈 차감</option>
                             <option value="특별 탕감">특별 상환 / 격려 상환</option>
+                            <!-- ⭐ 신규 카테고리 3종 추가 -->
+                            <option value="현장사진">현장사진</option>
+                            <option value="배송">배송</option>
+                            <option value="자재상하차">자재상하차</option>
                             <option value="기타">기타</option>
                         </select>
                     </div>
@@ -106,6 +120,7 @@
                 </button>
             </div>
 
+            <!-- 2. 히스토리 리스트 카드 -->
             <div class="bg-white rounded-3xl p-6 shadow-xs border border-slate-100">
                 <div class="flex justify-between items-center mb-4">
                     <div class="flex items-center gap-2">
@@ -116,7 +131,7 @@
                         </div>
                         <div>
                             <h3 class="text-lg font-bold text-slate-900">탕감 히스토리 내역</h3>
-                            <p class="text-[11px] text-indigo-600 font-medium">💡 리스트의 상세 메모 칸을 [더블클릭]하면 실시간 수정이 가능합니다!</p>
+                            <p class="text-[11px] text-indigo-600 font-medium">💡 분류 태그와 상세 메모를 각각 [더블클릭]하면 현장에서 바로 수정이 가능합니다!</p>
                         </div>
                     </div>
                     <div class="flex gap-2">
@@ -125,13 +140,18 @@
                     </div>
                 </div>
 
+                <!-- 필터 탭 (새 카테고리 적용 확장) -->
                 <div class="flex gap-1.5 border-b border-slate-100 pb-3 mb-3 overflow-x-auto">
-                    <button onclick="filterHistory('전체')" id="filter-전체" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 text-white transition cursor-pointer">전체</button>
-                    <button onclick="filterHistory('알바')" id="filter-알바" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer">알바</button>
-                    <button onclick="filterHistory('용돈 차감')" id="filter-용돈" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer">용돈 차감</button>
-                    <button onclick="filterHistory('특별 탕감')" id="filter-특별" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer">특별 탕감</button>
+                    <button onclick="filterHistory('전체')" id="filter-전체" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 text-white transition cursor-pointer whitespace-nowrap">전체</button>
+                    <button onclick="filterHistory('알바')" id="filter-알바" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">알바</button>
+                    <button onclick="filterHistory('용돈 차감')" id="filter-용돈" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">용돈 차감</button>
+                    <button onclick="filterHistory('특별 탕감')" id="filter-특별" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">특별 탕감</button>
+                    <button onclick="filterHistory('현장사진')" id="filter-현장사진" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">현장사진</button>
+                    <button onclick="filterHistory('배송')" id="filter-배송" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">배송</button>
+                    <button onclick="filterHistory('자재상하차')" id="filter-자재상하차" class="filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap">자재상하차</button>
                 </div>
 
+                <!-- 히스토리 스크롤 영역 -->
                 <div id="historyList" class="space-y-3 max-h-120 overflow-y-auto pr-1">
                     <div class="text-center py-8 text-slate-400 text-sm">내역을 불러오는 중입니다...</div>
                 </div>
@@ -140,6 +160,7 @@
         </div>
     </div>
 
+    <!-- 푸터 가이드 -->
     <div class="max-w-2xl w-full mx-auto px-4 mt-6 text-center text-xs text-slate-400">
         <p>© 부채 탕감 프로젝트 Dashboard · 오픈소스 라이선스</p>
     </div>
@@ -162,7 +183,7 @@
         let currentFilter = '전체';
         let isFirebaseActive = false;
         let database = null;
-        let compressedImageBase64 = ""; // 압축 처리된 이미지 담는 전역 변수
+        let compressedImageBase64 = "";
 
         // 페이지 가동 시 초기 설정
         window.addEventListener('DOMContentLoaded', () => {
@@ -171,7 +192,7 @@
             setupImageCompression();
         });
 
-        // ⭐ 이미지 초경량 고해상도 자동 압축 시스템 (Canvas 기반 기법)
+        // 이미지 자동 압축 가동
         function setupImageCompression() {
             document.getElementById('imageInput').addEventListener('change', function(e) {
                 const file = e.target.files[0];
@@ -184,7 +205,7 @@
                     const img = new Image();
                     img.onload = function() {
                         const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 500; // 용량 최소화를 위해 최대 가로폭 500px 제한
+                        const MAX_WIDTH = 500;
                         let width = img.width;
                         let height = img.height;
 
@@ -197,8 +218,6 @@
 
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        
-                        // JPEG 포맷 65% 압축률 최적화 적용 (가독성은 유지하되 용량은 1/10 토막)
                         compressedImageBase64 = canvas.toDataURL('image/jpeg', 0.65);
                     };
                     img.src = event.target.result;
@@ -220,7 +239,7 @@
             }
         }
 
-        // 초기 데이터 로드 및 리스너 등록
+        // 데이터 로드 리스너
         if (isFirebaseActive) {
             database.ref('debt_project').on('value', (snapshot) => {
                 const data = snapshot.val();
@@ -263,7 +282,6 @@
             
             const filteredHistory = history.filter(item => {
                 if (currentFilter === '전체') return true;
-                if (currentFilter === '용돈 차감') return item.category === '용돈 차감';
                 return item.category === currentFilter;
             });
 
@@ -280,8 +298,10 @@
                 if (log.category === '알바') badgeStyle = "bg-indigo-50 text-indigo-600 border-indigo-100";
                 if (log.category === '용돈 차감') badgeStyle = "bg-amber-50 text-amber-600 border-amber-100";
                 if (log.category === '특별 탕감') badgeStyle = "bg-emerald-50 text-emerald-600 border-emerald-100";
+                if (log.category === '현장사진') badgeStyle = "bg-sky-50 text-sky-600 border-sky-100";
+                if (log.category === '배송') badgeStyle = "bg-purple-50 text-purple-600 border-purple-100";
+                if (log.category === '자재상하차') badgeStyle = "bg-rose-50 text-rose-600 border-rose-100";
 
-                // 이미지가 있을 경우에만 전용 이미지 태그 생성
                 const imgElement = log.image ? `
                     <div class="mt-2 text-left">
                         <img src="${log.image}" alt="현장사진" class="max-w-[140px] h-auto rounded-lg shadow-xs border border-slate-200 hover:scale-105 transition-all duration-200 cursor-pointer" onclick="window.open(this.src)">
@@ -292,7 +312,11 @@
                     <div class="bg-white border border-slate-100 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center transition hover:shadow-md hover:border-slate-200/60 duration-200 gap-4">
                         <div class="space-y-1 w-full md:w-3/4">
                             <div class="flex items-center gap-2">
-                                <span class="text-xs font-bold border px-2 py-0.5 rounded-md ${badgeStyle}">${log.category}</span>
+                                <!-- ⭐ 신규: 분류 명칭을 더블클릭해서 직접 수정 가능하도록 변경 -->
+                                <span class="text-xs font-bold border px-2 py-0.5 rounded-md ${badgeStyle} cursor-pointer select-none"
+                                      ondblclick="editCategoryDirect(${log.id})" title="더블클릭하여 분류 태그 직접 수정">
+                                    ${log.category}
+                                </span>
                                 <span class="text-[11px] text-slate-400 font-medium">${log.date}</span>
                             </div>
                             <p class="text-sm font-semibold text-slate-700 mt-1 cursor-edit hover:bg-slate-50 p-1 rounded transition border border-transparent hover:border-dashed hover:border-slate-300 select-none" 
@@ -313,17 +337,54 @@
             }).join('');
         }
 
-        // ⭐ 신규 기능: 더블클릭 시 현장에서 직접 수정 및 즉각 서버 동기화 함수
+        // ⭐ 신규 기능 1: 새로운 내역 등록할 때 드롭다운 선택 박스를 [더블클릭]해서 커스텀 항목 바로 주입하는 함수
+        function addCustomCategoryDirectly() {
+            const customCat = prompt("📋 목록에 없는 새로운 탕감 항목 분류를 직접 입력하세요:");
+            if (!customCat || !customCat.trim()) return;
+            
+            const select = document.getElementById('category');
+            const trimmed = customCat.trim();
+            
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === trimmed) {
+                    select.selectedIndex = i;
+                    return;
+                }
+            }
+            
+            const newOption = document.createElement('option');
+            newOption.value = trimmed;
+            newOption.text = trimmed;
+            select.add(newOption, select.options[select.options.length - 1]); // '기타' 바로 위에 배치
+            select.value = trimmed;
+        }
+
+        // ⭐ 신규 기능 2: 이미 등록된 내역의 분류 태그를 리스트에서 직접 [더블클릭]해 자유롭게 텍스트를 수정하는 함수
+        function editCategoryDirect(id) {
+            const item = history.find(log => log.id === id);
+            if (!item) return;
+
+            const updatedCat = prompt("✏️ 이 내역의 탕감 항목 분류명을 직접 입력하여 수정하세요:", item.category);
+            if (updatedCat === null || !updatedCat.trim()) return;
+
+            item.category = updatedCat.trim();
+            syncData();
+        }
+
+        // 메모 내역 더블클릭 수정
         function editDescriptionDirect(id) {
             const item = history.find(log => log.id === id);
             if (!item) return;
 
             const updatedText = prompt("✏️ 해당 항목의 상세 메모를 직접 입력하여 수정하세요:", item.description || "");
-            if (updatedText === null) return; // 취소 버튼 처리
+            if (updatedText === null) return;
 
             item.description = updatedText.trim();
+            syncData();
+        }
 
-            // 상위 저장소 모드 동기화 처리
+        // 동기화 공통 처리 함수
+        function syncData() {
             if (isFirebaseActive) {
                 database.ref('debt_project').set({
                     balance: balance,
@@ -338,14 +399,12 @@
         function filterHistory(category) {
             currentFilter = category;
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.className = "filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer";
+                btn.className = "filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition cursor-pointer whitespace-nowrap";
             });
-            let targetId = 'filter-전체';
-            if (category === '알바') targetId = 'filter-알바';
-            if (category === '용돈 차감') targetId = 'filter-용돈';
-            if (category === '특별 탕감') targetId = 'filter-특별';
-            
-            document.getElementById(targetId).className = "filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 text-white transition cursor-pointer";
+            const targetBtn = document.getElementById(`filter-${category}`);
+            if (targetBtn) {
+                targetBtn.className = "filter-btn text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 text-white transition cursor-pointer whitespace-nowrap";
+            }
             renderHistoryList();
         }
 
@@ -384,7 +443,7 @@
                 amount: actualDeduction,
                 balance: newBalance,
                 description: description,
-                image: compressedImageBase64 // ⭐ 최적화 압축을 마친 이미지 스트림 주입
+                image: compressedImageBase64
             };
 
             const updatedHistory = [record, ...history];
@@ -412,8 +471,8 @@
         function clearInputs(amt, desc) {
             amt.value = '';
             desc.value = '';
-            document.getElementById('imageInput').value = ''; // 이미지 폼 초기화
-            compressedImageBase64 = ""; // 전역 버퍼 클리어
+            document.getElementById('imageInput').value = '';
+            compressedImageBase64 = "";
             const todayStr = new Date().toISOString().split('T')[0];
             document.getElementById('dateInput').value = todayStr;
         }
@@ -446,11 +505,13 @@
                 alert('내보낼 데이터가 없습니다.');
                 return;
             }
-            let csvContent = "\uFEFF"; 
-            csvContent += "날짜,분류,탕감금액,남은잔액,상세내용\n";
+            let csvContent = "﻿"; 
+            csvContent += "날짜,분류,탕감금액,남은잔액,상세내용
+";
 
             history.forEach(log => {
-                csvContent += `"${log.date}","${log.category}",${log.amount},${log.balance},"${log.description || ''}"\n`;
+                csvContent += `"${log.date}","${log.category}",${log.amount},${log.balance},"${log.description || ''}"
+`;
             });
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
